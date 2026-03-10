@@ -566,9 +566,10 @@ function LoginPage({users,onLogin}){
   const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [err,setErr]=useState("");
   const submit=e=>{
     e.preventDefault();
-    const u=users.find(x=>x.email.toLowerCase()===email.toLowerCase()&&x.password===password&&x.status==="active");
+    const u=users.find(x=>x.email.toLowerCase()===email.toLowerCase()&&x.password===password&&x.status!=="inactive");
     if(!u){setErr("Invalid email or password. Please try again.");return;}
-    onLogin(u);
+    // Auto-activate invited users on first login
+    onLogin(u.status==="invited"?{...u,status:"active"}:u);
   };
   return(
     <div className="login-page">
@@ -594,7 +595,7 @@ function LoginPage({users,onLogin}){
         <div style={{marginTop:24,borderTop:"1px solid #f3f4f6",paddingTop:18}}>
           <div style={{fontSize:11.5,color:"#9ca3af",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>Demo Accounts</div>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {users.filter(u=>u.status==="active").map(u=>(
+            {users.filter(u=>u.status!=="inactive").map(u=>(
               <div key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#f8f9fc",borderRadius:8,cursor:"pointer"}} onClick={()=>{setEmail(u.email);setPassword(u.password);}}>
                 <div style={{width:28,height:28,borderRadius:7,background:u.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{u.initials}</div>
                 <div><div style={{fontSize:13,fontWeight:600}}>{u.name}</div><div style={{fontSize:11,color:"#9ca3af"}}>{u.email}</div></div>
@@ -1806,7 +1807,7 @@ function UsersPage({users,setUsers,currentUser}){
   const [newCreds,setNewCreds]=useState(null);
 
   const handleCreate=form=>{
-    const nu={id:form.initials.toUpperCase(),initials:form.initials.toUpperCase(),name:form.name,email:form.email,password:form.password,color:form.color,role:form.role,status:"invited",joinedAt:new Date().toISOString().split("T")[0]};
+    const nu={id:form.initials.toUpperCase(),initials:form.initials.toUpperCase(),name:form.name,email:form.email,password:form.password,color:form.color,role:form.role,status:"active",joinedAt:new Date().toISOString().split("T")[0]};
     setUsers(u=>[...u,nu]);
     setNewCreds({...nu});
     setShowInvite(false);
@@ -2089,7 +2090,7 @@ function App(){
   const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
   const isSpecialPage=["database","users","photos"].includes(activeNav);
 
-  if(!currentUser) return <LoginPage users={users} onLogin={u=>setCurrentUser({...u,status:"active"})}/>;
+  if(!currentUser) return <LoginPage users={users} onLogin={u=>{const activated={...u,status:"active"};setUsers(prev=>prev.map(x=>x.id===activated.id?activated:x));setCurrentUser(activated);}}/>;
 
   return(
     <>
