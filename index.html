@@ -53,7 +53,7 @@ body{background:#eef0f6;color:#1a1d23;}
 .sb-badge{margin-left:auto;background:rgba(255,255,255,.1);color:rgba(255,255,255,.45);font-size:11px;font-weight:600;padding:1px 7px;border-radius:10px;font-family:'JetBrains Mono',monospace;}
 .sb-item.act .sb-badge{background:rgba(37,99,235,.4);color:#93c5fd;}
 .sb-foot{padding:12px 10px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;}
-.sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:6px;}
+.sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:6px;transition:background .15s;}.sb-user:hover{background:rgba(255,255,255,.07);cursor:pointer;}
 .sb-user-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
 .sb-user-info{flex:1;min-width:0;}
 .sb-user-name{font-size:12.5px;color:rgba(255,255,255,.8);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -370,6 +370,35 @@ textarea.fi{resize:vertical;min-height:80px;}
   .photo-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
 }
 @media(min-width:768px){.m-only{display:none!important;}}
+
+/* ── PROFILE MODAL ── */
+.prof-av-preview{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin:0 auto 6px;transition:background .15s;}
+.prof-section{background:#f8f9fc;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+.prof-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;margin-bottom:2px;}
+.pw-strength{height:4px;border-radius:3px;margin-top:4px;transition:width .3s,background .3s;}
+/* ── PUNCH REPORT MODAL ── */
+.punch-modal{background:#fff;border-radius:16px;width:100%;max-width:740px;max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:mIn .2s ease;}
+.punch-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
+.punch-stat{background:#f8f9fc;border-radius:10px;padding:14px 16px;text-align:center;}
+.punch-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:3px;}
+.punch-stat-lbl{font-size:12px;color:#9ca3af;font-weight:500;}
+.punch-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.punch-table th{background:#f4f6fb;padding:8px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #eaecf0;white-space:nowrap;}
+.punch-table td{padding:9px 12px;border-bottom:1px solid #f3f4f6;vertical-align:top;}
+.punch-table tr:last-child td{border-bottom:none;}
+.punch-table tr:hover td{background:#fafbfd;}
+.email-preview{background:#f8f9fc;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;font-size:12.5px;font-family:'JetBrains Mono',monospace;white-space:pre-wrap;max-height:260px;overflow-y:auto;color:#374151;line-height:1.7;}
+.tab-bar{display:flex;gap:2px;background:#f3f4f6;border-radius:9px;padding:3px;margin-bottom:16px;}
+.tab-btn{flex:1;padding:7px 12px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;color:#6b7280;border:none;background:none;font-family:'Figtree',sans-serif;transition:all .15s;}
+.tab-btn.act{background:#fff;color:#1a1d23;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+/* ── PRINT STYLES ── */
+@media print{
+  body{background:#fff!important;overflow:auto!important;}
+  .fw-app,.login-page{display:none!important;}
+  #print-area{display:block!important;}
+}
+#print-area{display:none;}
+
 </style>
 </head>
 <body>
@@ -583,7 +612,7 @@ function LoginPage({users,onLogin}){
 /* ════════════════════════════════
    SIDEBAR
 ════════════════════════════════ */
-function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout}){
+function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout,onEditProfile}){
   const navItems=[
     {id:"plans",label:"Plans",icon:"📐",section:"field"},
     {id:"specs",label:"Specifications",icon:"📋",section:"field"},
@@ -617,7 +646,7 @@ function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout}){
         )}
       </div>
       <div className="sb-foot">
-        <div className="sb-user">
+        <div className="sb-user" style={{cursor:"pointer"}} onClick={onEditProfile} title="Edit profile">
           <div className="sb-user-av" style={{background:currentUser.color}}>{currentUser.initials}</div>
           <div className="sb-user-info"><div className="sb-user-name">{currentUser.name}</div><div className="sb-user-role">{currentUser.role}</div></div>
           <button className="sb-logout" onClick={onLogout} title="Sign out">↩</button>
@@ -1326,6 +1355,448 @@ function DatabasePage({db,setDb,tasks,onTaskClick,users}){
   );
 }
 
+
+/* ════════════════════════════════
+   PROFILE MODAL  (all roles)
+════════════════════════════════ */
+function ProfileModal({currentUser, users, setUsers, setCurrentUser, onClose}){
+  const [f,setF]=useState({
+    name:currentUser.name||"",
+    initials:currentUser.initials||"",
+    email:currentUser.email||"",
+    color:currentUser.color||"#2563eb",
+    currentPw:"",newPw:"",confirmPw:""
+  });
+  const [errors,setErrors]=useState({});
+  const [saved,setSaved]=useState(false);
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+
+  const pwStrength=pw=>{if(!pw)return{w:0,c:"#e5e7eb",l:""};if(pw.length<6)return{w:33,c:"#ef4444",l:"Weak"};if(pw.length<10)return{w:66,c:"#f59e0b",l:"Fair"};return{w:100,c:"#16a34a",l:"Strong"};};
+  const str=pwStrength(f.newPw);
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  const submit=()=>{
+    const e={};
+    if(!f.name.trim()) e.name="Name is required.";
+    if(!f.email.trim()) e.email="Email is required.";
+    if(!f.initials.trim()) e.initials="Initials required.";
+    if(f.newPw||f.currentPw||f.confirmPw){
+      if(f.currentPw!==currentUser.password) e.currentPw="Current password is incorrect.";
+      if(f.newPw.length<6) e.newPw="New password must be at least 6 characters.";
+      if(f.newPw!==f.confirmPw) e.confirmPw="Passwords do not match.";
+    }
+    if(Object.keys(e).length){setErrors(e);return;}
+    const updated={...currentUser,
+      name:f.name.trim(),initials:f.initials.toUpperCase().slice(0,3),
+      email:f.email.trim(),color:f.color,
+      password:f.newPw?f.newPw:currentUser.password
+    };
+    setUsers(u=>u.map(x=>x.id===currentUser.id?updated:x));
+    setCurrentUser(updated);
+    setErrors({});setSaved(true);
+    setTimeout(()=>setSaved(false),2000);
+  };
+
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd">
+          <h2 className="m-ht">My Profile</h2>
+          <button className="btn btn-g btn-ic" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="m-bd">
+
+          {/* Avatar preview */}
+          <div style={{textAlign:"center",marginBottom:4}}>
+            <div className="prof-av-preview" style={{background:f.color}}>{f.initials||"?"}</div>
+            <span className="role-badge" style={{background:ROLE_COLORS[currentUser.role].bg,color:ROLE_COLORS[currentUser.role].color}}>
+              {ROLE_ICONS[currentUser.role]} {currentUser.role}
+            </span>
+            <div style={{fontSize:11.5,color:"#9ca3af",marginTop:5}}>Role can only be changed by an Admin.</div>
+          </div>
+
+          {/* Basic Info */}
+          <div className="prof-section">
+            <div className="prof-section-title">Personal Information</div>
+            <div className="fr2">
+              <div className="fg">
+                <label className="fl" htmlFor="prof-name">Full Name *</label>
+                <input id="prof-name" className="fi" value={f.name} onChange={e=>set("name",e.target.value)} placeholder="Your full name"/>
+                {errors.name&&<span style={{color:"#ef4444",fontSize:12}}>{errors.name}</span>}
+              </div>
+              <div className="fg">
+                <label className="fl" htmlFor="prof-ini">Initials *</label>
+                <input id="prof-ini" className="fi" value={f.initials} onChange={e=>set("initials",e.target.value.toUpperCase().slice(0,3))} placeholder="AB" maxLength={3}/>
+                {errors.initials&&<span style={{color:"#ef4444",fontSize:12}}>{errors.initials}</span>}
+              </div>
+            </div>
+            <div className="fg">
+              <label className="fl" htmlFor="prof-email">Email Address *</label>
+              <input id="prof-email" className="fi" type="email" value={f.email} onChange={e=>set("email",e.target.value)} placeholder="your@email.com"/>
+              {errors.email&&<span style={{color:"#ef4444",fontSize:12}}>{errors.email}</span>}
+            </div>
+            <div className="fg">
+              <label className="fl">Avatar Color</label>
+              <div className="color-swatches" style={{marginTop:4}}>
+                {COLOR_PALETTE.map(c=><div key={c} className="db-color-swatch" style={{background:c,width:28,height:28,outline:f.color===c?"3px solid #1a1d23":""}} onClick={()=>set("color",c)}/>)}
+              </div>
+            </div>
+          </div>
+
+          {/* Password change */}
+          <div className="prof-section">
+            <div className="prof-section-title">Change Password <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"#c4c9d4",fontSize:10.5}}>(leave blank to keep current)</span></div>
+            <div className="fg">
+              <label className="fl" htmlFor="prof-cpw">Current Password</label>
+              <input id="prof-cpw" className="fi" type="password" value={f.currentPw} onChange={e=>set("currentPw",e.target.value)} placeholder="Enter current password"/>
+              {errors.currentPw&&<span style={{color:"#ef4444",fontSize:12}}>{errors.currentPw}</span>}
+            </div>
+            <div className="fr2">
+              <div className="fg">
+                <label className="fl" htmlFor="prof-npw">New Password</label>
+                <input id="prof-npw" className="fi" type="password" value={f.newPw} onChange={e=>set("newPw",e.target.value)} placeholder="Min. 6 characters"/>
+                {f.newPw&&<div style={{background:"#f3f4f6",borderRadius:4,height:4,marginTop:5}}><div className="pw-strength" style={{width:str.w+"%",background:str.c}}/></div>}
+                {f.newPw&&<span style={{fontSize:11,color:str.c,fontWeight:600}}>{str.l}</span>}
+                {errors.newPw&&<span style={{color:"#ef4444",fontSize:12}}>{errors.newPw}</span>}
+              </div>
+              <div className="fg">
+                <label className="fl" htmlFor="prof-cpw2">Confirm New</label>
+                <input id="prof-cpw2" className="fi" type="password" value={f.confirmPw} onChange={e=>set("confirmPw",e.target.value)} placeholder="Repeat new password"/>
+                {f.confirmPw&&f.newPw===f.confirmPw&&<span style={{fontSize:11,color:"#16a34a",fontWeight:600}}>✓ Passwords match</span>}
+                {errors.confirmPw&&<span style={{color:"#ef4444",fontSize:12}}>{errors.confirmPw}</span>}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div className="m-ft">
+          {saved&&<span style={{marginRight:"auto",color:"#16a34a",fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:5}}>✓ Saved successfully</span>}
+          <button className="btn btn-s" onClick={onClose}>Cancel</button>
+          <button className="btn btn-p" onClick={submit}>Save Changes</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   PUNCH REPORT MODAL  (Admin + Engineer)
+════════════════════════════════ */
+function PunchReportModal({tasks, users, currentUser, onClose, onOpenTask}){
+  const [tab,setTab]=useState("overview");
+  const [emailFilter,setEmailFilter]=useState("open"); // open | all
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  /* Punch items: tasks where attrs.punchItem === "Yes" */
+  const allPunch=useMemo(()=>tasks.filter(t=>(t.attrs?.punchItem||"").toLowerCase()==="yes"),[tasks]);
+  const openPunch=useMemo(()=>allPunch.filter(t=>t.column!=="approved"),[allPunch]);
+  const closedPunch=useMemo(()=>allPunch.filter(t=>t.column==="approved"),[allPunch]);
+  const overduePunch=useMemo(()=>openPunch.filter(t=>isOverdue(t.dueDate)),[openPunch]);
+  const highPunch=useMemo(()=>openPunch.filter(t=>t.priority==="high"),[openPunch]);
+
+  const emailItems = emailFilter==="open" ? openPunch : allPunch;
+
+  /* ── EMAIL GENERATION ── */
+  const recipientEmails=useMemo(()=>{
+    const ids=new Set(emailItems.map(t=>t.assignee));
+    return users.filter(u=>ids.has(u.id)&&u.email).map(u=>u.email);
+  },[emailItems,users]);
+
+  const emailSubject=`FieldWork — Punch Item Report — ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  const emailBody=useMemo(()=>{
+    const lines=[
+      `Punch Item Report`,
+      `Generated: ${new Date().toLocaleString()}`,
+      `Generated by: ${currentUser.name}`,
+      ``,
+      `SUMMARY`,
+      `-------`,
+      `Total punch items: ${allPunch.length}`,
+      `Open: ${openPunch.length}`,
+      `Closed / Approved: ${closedPunch.length}`,
+      `Overdue: ${overduePunch.length}`,
+      ``,
+      `${emailFilter==="open"?"OPEN PUNCH ITEMS":"ALL PUNCH ITEMS"} (${emailItems.length})`,
+      `${"─".repeat(60)}`,
+    ];
+    emailItems.forEach((t,i)=>{
+      const person=users.find(u=>u.id===t.assignee);
+      const col=COLUMNS.find(c=>c.id===t.column);
+      lines.push(``,`${i+1}. [#${t.id}] ${t.title}`);
+      lines.push(`   Status  : ${col?.label||t.column}`);
+      lines.push(`   Priority: ${PRI[t.priority]?.label||t.priority}`);
+      lines.push(`   Assignee: ${person?.name||t.assignee}`);
+      if(t.dueDate) lines.push(`   Due     : ${fmtDate(t.dueDate)}${isOverdue(t.dueDate)?" ⚠ OVERDUE":""}`);
+      if(t.attrs?.location) lines.push(`   Location: ${t.attrs.location}${t.attrs.roomNumber?" / "+t.attrs.roomNumber:""}`);
+      if(t.attrs?.originalPunchNmbr) lines.push(`   Orig. #  : ${t.attrs.originalPunchNmbr}`);
+      if(t.attrs?.responsibleContractor) lines.push(`   Contractor: ${t.attrs.responsibleContractor}`);
+      if(t.description) lines.push(`   Note    : ${t.description}`);
+    });
+    lines.push(``);
+    lines.push(`${"─".repeat(60)}`);
+    lines.push(`This report was generated by FieldWork Task Management.`);
+    return lines.join("\n");
+  },[emailItems,allPunch,openPunch,closedPunch,overduePunch,users,emailFilter,currentUser]);
+
+  const openMailClient=()=>{
+    const to=recipientEmails.join(",");
+    const uri=`mailto:${to}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(uri,"_blank");
+  };
+
+  const copyEmailText=()=>{
+    const full=`To: ${recipientEmails.join(", ")}\nSubject: ${emailSubject}\n\n${emailBody}`;
+    navigator.clipboard.writeText(full).then(()=>alert("✅ Email text copied to clipboard!")).catch(()=>{
+      // Fallback
+      const ta=document.createElement("textarea");ta.value=full;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+      alert("✅ Copied to clipboard!");
+    });
+  };
+
+  /* ── PDF / PRINT ── */
+  const printPDF=()=>{
+    const printItems = emailFilter==="open" ? openPunch : allPunch;
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Punch Item Report — FieldWork</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1d23;background:#fff;padding:24px 32px;}
+  .hdr{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #2563eb;padding-bottom:14px;margin-bottom:20px;}
+  .hdr-logo{display:flex;align-items:center;gap:10px;}
+  .hdr-logo-ic{width:36px;height:36px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .hdr-title{font-size:22pt;font-weight:800;color:#1a1d23;letter-spacing:-.02em;}
+  .hdr-sub{font-size:10pt;color:#6b7280;margin-top:3px;}
+  .hdr-meta{text-align:right;font-size:9pt;color:#9ca3af;line-height:1.8;}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+  .stat{background:#f8f9fc;border-radius:8px;padding:12px 14px;text-align:center;border:1px solid #eaecf0;}
+  .stat-n{font-size:22pt;font-weight:800;color:#2563eb;margin-bottom:2px;}
+  .stat-l{font-size:8.5pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;}
+  .stat.warn .stat-n{color:#ef4444;}
+  .section-title{font-size:13pt;font-weight:700;color:#1a1d23;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px;}
+  table{width:100%;border-collapse:collapse;font-size:9.5pt;}
+  th{background:#f4f6fb;padding:7px 10px;text-align:left;font-size:8pt;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid #e5e7eb;white-space:nowrap;}
+  td{padding:8px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top;}
+  tr:nth-child(even) td{background:#fafbfd;}
+  .pri-high{background:#fef2f2;color:#ef4444;padding:2px 7px;border-radius:4px;font-weight:700;font-size:8pt;white-space:nowrap;}
+  .pri-medium{background:#fffbeb;color:#d97706;padding:2px 7px;border-radius:4px;font-weight:700;font-size:8pt;}
+  .pri-low{background:#f9fafb;color:#6b7280;padding:2px 7px;border-radius:4px;font-weight:700;font-size:8pt;}
+  .status-pill{padding:2px 8px;border-radius:10px;font-size:7.5pt;font-weight:700;white-space:nowrap;}
+  .overdue{color:#ef4444;font-weight:700;}
+  .task-id{font-family:'Courier New',monospace;font-size:8pt;color:#9ca3af;}
+  .footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:8pt;color:#9ca3af;}
+  @page{margin:15mm 12mm;size:A4 landscape;}
+  @media print{body{padding:0;}}
+</style></head><body>
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">
+      <div class="hdr-logo-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg></div>
+      <div class="hdr-title">FieldWork</div>
+    </div>
+    <div class="hdr-sub">Punch Item Report — ${emailFilter==="open"?"Open Items Only":"All Items"}</div>
+  </div>
+  <div class="hdr-meta">
+    Generated: ${new Date().toLocaleString()}<br/>
+    By: ${currentUser.name} (${currentUser.role})<br/>
+    Total open punch items: ${openPunch.length}
+  </div>
+</div>
+<div class="summary">
+  <div class="stat"><div class="stat-n">${allPunch.length}</div><div class="stat-l">Total Punch Items</div></div>
+  <div class="stat"><div class="stat-n">${openPunch.length}</div><div class="stat-l">Open</div></div>
+  <div class="stat warn"><div class="stat-n">${overduePunch.length}</div><div class="stat-l">Overdue</div></div>
+  <div class="stat"><div class="stat-n">${highPunch.length}</div><div class="stat-l">High Priority</div></div>
+</div>
+<div class="section-title">📋 ${emailFilter==="open"?"Open Punch Items":"All Punch Items"} (${printItems.length})</div>
+<table>
+<thead><tr>
+  <th>#</th><th>Task ID</th><th>Title</th><th>Priority</th><th>Status</th><th>Assignee</th>
+  <th>Due Date</th><th>Location</th><th>Orig. Punch #</th><th>Contractor</th>
+</tr></thead>
+<tbody>
+${printItems.map((t,i)=>{
+  const person=users.find(u=>u.id===t.assignee);
+  const col=COLUMNS.find(c=>c.id===t.column);
+  const late=isOverdue(t.dueDate);
+  const priClass=`pri-${t.priority}`;
+  const colStyle=`background:${(COL_COLORS[t.column]||"#6b7280")}22;color:${COL_COLORS[t.column]||"#6b7280"};`;
+  return `<tr>
+    <td style="font-weight:700;color:#9ca3af;">${i+1}</td>
+    <td class="task-id">#${t.id}</td>
+    <td style="font-weight:600;max-width:220px;">${t.title}${t.description?`<br/><span style="font-weight:400;color:#9ca3af;font-size:8.5pt;">${t.description.slice(0,80)}${t.description.length>80?"…":""}</span>`:""}</td>
+    <td><span class="${priClass}">${PRI[t.priority]?.icon||""} ${PRI[t.priority]?.label||t.priority}</span></td>
+    <td><span class="status-pill" style="${colStyle}">${col?.label||t.column}</span></td>
+    <td>${person?.name||t.assignee}</td>
+    <td class="${late?"overdue":""}">${fmtDate(t.dueDate)||"—"}${late?" ⚠":""}</td>
+    <td>${[t.attrs?.location,t.attrs?.roomNumber].filter(Boolean).join(" / ")||"—"}</td>
+    <td style="font-family:'Courier New',monospace;font-size:8pt;">${t.attrs?.originalPunchNmbr||"—"}</td>
+    <td>${t.attrs?.responsibleContractor||"—"}</td>
+  </tr>`;
+}).join("")}
+</tbody></table>
+<div class="footer">
+  <span>FieldWork Task Management — Punch Item Report</span>
+  <span>Printed: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</span>
+</div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body></html>`;
+    const w=window.open("","_blank","width=1100,height=700");
+    if(!w){alert("Please allow pop-ups to generate the PDF.");return;}
+    w.document.write(html);w.document.close();
+  };
+
+  /* ── RENDER ── */
+  const punchItems = emailFilter==="open" ? openPunch : allPunch;
+
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="punch-modal" onClick={e=>e.stopPropagation()}>
+        <div className="m-hd">
+          <h2 className="m-ht">📋 Punch Item Report</h2>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <select className="fi" style={{fontSize:12,padding:"4px 8px",width:"auto"}} value={emailFilter} onChange={e=>setEmailFilter(e.target.value)}>
+              <option value="open">Open items only</option>
+              <option value="all">All punch items</option>
+            </select>
+            <button className="btn btn-g btn-ic" onClick={onClose}>✕</button>
+          </div>
+        </div>
+        <div className="m-bd" style={{paddingTop:16}}>
+
+          {/* Summary stats */}
+          <div className="punch-summary">
+            <div className="punch-stat"><div className="punch-stat-num" style={{color:"#2563eb"}}>{allPunch.length}</div><div className="punch-stat-lbl">Total</div></div>
+            <div className="punch-stat"><div className="punch-stat-num" style={{color:"#f97316"}}>{openPunch.length}</div><div className="punch-stat-lbl">Open</div></div>
+            <div className="punch-stat"><div className="punch-stat-num" style={{color:"#ef4444"}}>{overduePunch.length}</div><div className="punch-stat-lbl">Overdue</div></div>
+            <div className="punch-stat"><div className="punch-stat-num" style={{color:"#16a34a"}}>{closedPunch.length}</div><div className="punch-stat-lbl">Closed</div></div>
+          </div>
+
+          {/* Tabs */}
+          <div className="tab-bar">
+            {[["overview","📋 Overview"],["email","📧 Email"],["pdf","🖨️ PDF"]].map(([k,l])=>(
+              <button key={k} className={`tab-btn${tab===k?" act":""}`} onClick={()=>setTab(k)}>{l}</button>
+            ))}
+          </div>
+
+          {/* ── OVERVIEW TAB ── */}
+          {tab==="overview"&&(
+            <div style={{overflowX:"auto"}}>
+              {punchItems.length===0?(
+                <div style={{textAlign:"center",padding:"30px",color:"#9ca3af"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>✅</div>
+                  <div style={{fontWeight:600,fontSize:14,color:"#374151"}}>No {emailFilter==="open"?"open ":""}punch items!</div>
+                </div>
+              ):(
+                <table className="punch-table">
+                  <thead><tr>
+                    <th>#</th><th>Title</th><th>Priority</th><th>Status</th>
+                    <th>Assignee</th><th>Due Date</th><th>Location</th><th>Orig.#</th>
+                  </tr></thead>
+                  <tbody>
+                    {punchItems.map((t,i)=>{
+                      const person=users.find(u=>u.id===t.assignee);
+                      const col=COLUMNS.find(c=>c.id===t.column);
+                      const late=isOverdue(t.dueDate);
+                      const pri=PRI[t.priority];
+                      return(
+                        <tr key={t.id} style={{cursor:"pointer"}} onClick={()=>{onOpenTask(t);onClose();}}>
+                          <td style={{color:"#9ca3af",fontFamily:"'JetBrains Mono',monospace",fontSize:11}}>{i+1}</td>
+                          <td style={{maxWidth:220}}>
+                            <div style={{fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+                            <div style={{fontSize:11,color:"#9ca3af",fontFamily:"'JetBrains Mono',monospace"}}>#{t.id}</div>
+                          </td>
+                          <td><span className="tc-pri" style={{color:pri.color,background:pri.bg,fontSize:10}}>{pri.icon} {pri.label}</span></td>
+                          <td><span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11.5,fontWeight:600,color:COL_COLORS[t.column]||"#6b7280"}}><span style={{width:6,height:6,borderRadius:"50%",background:COL_COLORS[t.column]||"#ccc",display:"inline-block"}}/>{col?.label||t.column}</span></td>
+                          <td style={{fontSize:12}}>
+                            <span style={{display:"inline-flex",alignItems:"center",gap:5}}>
+                              <span style={{width:20,height:20,borderRadius:5,background:person?.color||"#6b7280",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{person?.initials||t.assignee}</span>
+                              {person?.name||t.assignee}
+                            </span>
+                          </td>
+                          <td style={{fontSize:12,color:late?"#ef4444":"#6b7280",fontWeight:late?700:400}}>{late&&"⚠️ "}{fmtDate(t.dueDate)||"—"}</td>
+                          <td style={{fontSize:11.5,color:"#6b7280"}}>{[t.attrs?.location,t.attrs?.roomNumber].filter(Boolean).join(" / ")||"—"}</td>
+                          <td style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10.5,color:"#9ca3af"}}>{t.attrs?.originalPunchNmbr||"—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* ── EMAIL TAB ── */}
+          {tab==="email"&&(
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"10px 14px",fontSize:12.5,color:"#1d4ed8"}}>
+                <strong>Recipients ({recipientEmails.length}):</strong> {recipientEmails.length>0?recipientEmails.join(", "):<em style={{color:"#9ca3af"}}>No email addresses found for assignees.</em>}
+              </div>
+              <div>
+                <div className="fl" style={{marginBottom:5}}>Subject</div>
+                <input className="fi" readOnly value={emailSubject} style={{background:"#f8f9fc",cursor:"text"}}/>
+              </div>
+              <div>
+                <div className="fl" style={{marginBottom:5}}>Email Body Preview</div>
+                <div className="email-preview">{emailBody}</div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button className="btn btn-p" style={{flex:1}} onClick={openMailClient}>📧 Open in Mail App</button>
+                <button className="btn btn-s" style={{flex:1}} onClick={copyEmailText}>📋 Copy to Clipboard</button>
+              </div>
+              <p style={{fontSize:11.5,color:"#9ca3af",textAlign:"center"}}>"Open in Mail App" will open your default email client with this email pre-filled.</p>
+            </div>
+          )}
+
+          {/* ── PDF TAB ── */}
+          {tab==="pdf"&&(
+            <div style={{display:"flex",flexDirection:"column",gap:16,alignItems:"center",padding:"10px 0"}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:10}}>🖨️</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:700,marginBottom:6}}>Print or Save as PDF</div>
+                <p style={{fontSize:13,color:"#6b7280",maxWidth:440,lineHeight:1.6}}>
+                  Clicking the button below opens a formatted A4 landscape report in a new window. Use your browser's <strong>Print</strong> function and select <strong>"Save as PDF"</strong> as the destination.
+                </p>
+              </div>
+              <div style={{background:"#f8f9fc",border:"1px solid #e5e7eb",borderRadius:12,padding:"16px 20px",width:"100%",maxWidth:440}}>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:10}}>Report will include:</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {[
+                    ["📊","Summary statistics (Total / Open / Overdue / High priority)"],
+                    ["📋",`${punchItems.length} ${emailFilter==="open"?"open ":""}punch item${punchItems.length!==1?"s":""} in table format`],
+                    ["🏗️","Location, contractor, original punch number per item"],
+                    ["🎨","Color-coded priority and status indicators"],
+                    ["📅","Generation date and user signature"],
+                  ].map(([ic,txt],i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,fontSize:12.5,color:"#374151"}}>
+                      <span style={{fontSize:15,flexShrink:0}}>{ic}</span><span>{txt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button className="btn btn-p" style={{padding:"11px 32px",fontSize:14}} onClick={printPDF}>
+                🖨️ Open Print Preview
+              </button>
+              <p style={{fontSize:11.5,color:"#9ca3af"}}>A pop-up window will open — ensure pop-ups are allowed for this site.</p>
+            </div>
+          )}
+
+        </div>
+        <div className="m-ft" style={{justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+          <span style={{fontSize:12,color:"#9ca3af"}}>{punchItems.length} item{punchItems.length!==1?"s":""} · {emailFilter==="open"?"open only":"all items"}</span>
+          <div style={{display:"flex",gap:7}}>
+            {tab!=="email"&&<button className="btn btn-s" onClick={()=>setTab("email")}>📧 Email</button>}
+            {tab!=="pdf"&&<button className="btn btn-s" onClick={()=>setTab("pdf")}>🖨️ PDF</button>}
+            <button className="btn btn-g" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════
    USERS PAGE (Admin only)
 ════════════════════════════════ */
@@ -1520,6 +1991,8 @@ function App(){
   const [mobileCol,setMobileCol]=useState("due-today");
   const [calMonth,setCalMonth]=useState(new Date());
   const [saveFlash,setSaveFlash]=useState(false);
+  const [showProfile,setShowProfile]=useState(false);
+  const [showPunchReport,setShowPunchReport]=useState(false);
   const sortMenuRef=useRef();
   const undoTimerRef=useRef();
   const importRef=useRef();
@@ -1621,7 +2094,7 @@ function App(){
   return(
     <>
       <div className="fw-app">
-        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>setCurrentUser(null)}/>
+        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>setCurrentUser(null)} onEditProfile={()=>setShowProfile(true)}/>
         <main className="fw-main">
           {/* TOP BAR */}
           <header className="fw-tb">
@@ -1648,10 +2121,11 @@ function App(){
                 {view==="board"&&<button className="btn btn-g d-only" onClick={()=>setShowEmptyColumns(s=>!s)} title={showEmptyColumns?"Hide empty":"Show empty"}>{showEmptyColumns?"⊡":"⊞"}</button>}
                 {can(currentUser,"create_task")&&<><input ref={importRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleImportTasks}/><button className="btn btn-g btn-ic d-only" onClick={()=>importRef.current?.click()} title="Import tasks CSV">⬆</button></>}
                 <button className="btn btn-g btn-ic d-only" onClick={handleExport} title="Export CSV">⬇</button>
+                {(can(currentUser,"create_task"))&&<button className="btn btn-s d-only" onClick={()=>setShowPunchReport(true)} title="Punch item report" style={{gap:5}}>📋 <span className="d-only">Punch Report</span></button>}
               </>}
               {saveFlash&&<span className="save-flash d-only">✓ Saved</span>}
               {can(currentUser,"manage_db")&&<button className="btn btn-g btn-ic d-only" onClick={handleReset} title="Reset all data to demo state" style={{color:"#ef4444"}}>↺</button>}
-              <div className="u-av" style={{background:currentUser.color}} title={`${currentUser.name} — ${currentUser.role}`}>{currentUser.initials}</div>
+              <div className="u-av" style={{background:currentUser.color,cursor:"pointer"}} title={`${currentUser.name} — Edit Profile`} onClick={()=>setShowProfile(true)} role="button" aria-label="Edit profile">{currentUser.initials}</div>
             </div>
           </header>
 
@@ -1675,8 +2149,9 @@ function App(){
               <span className="stat-info">{filteredTasks.length}/{tasks.length} tasks</span>
             </div>
             {view==="board"&&<div className="mob-cs m-only">{visibleColumns.map(col=>{const cnt=tasksByColumn[col.id]?.length||0,color=COL_COLORS[col.id]||"#6b7280",active=mobileCol===col.id;return<button key={col.id} className="mob-pill" onClick={()=>setMobileCol(col.id)} style={{borderColor:color,background:active?color:"#fff",color:active?"#fff":color}}>{col.label} ({cnt})</button>;})}</div>}
-            <div className="m-only" style={{display:"flex",gap:6,padding:"8px 12px",background:"#fff",borderBottom:"1px solid #eaecf0",flexShrink:0}}>
+            <div className="m-only" style={{display:"flex",gap:6,padding:"8px 12px",background:"#fff",borderBottom:"1px solid #eaecf0",flexShrink:0,flexWrap:"wrap"}}>
               {[["board","⊞","Board"],["list","≡","List"],["calendar","📅","Cal"]].map(([v,ic,lbl])=><button key={v} className={`btn${view===v?" btn-p":" btn-s"}`} style={{flex:1,justifyContent:"center"}} onClick={()=>setView(v)}>{ic} {lbl}</button>)}
+              {can(currentUser,"create_task")&&<button className="btn btn-s" style={{flex:"1 0 100%",justifyContent:"center"}} onClick={()=>setShowPunchReport(true)}>📋 Punch Report</button>}
             </div>
             {view==="board"&&<BoardView columns={visibleColumns} tasksByColumn={tasksByColumn} draggingId={draggingId} dragOverCol={dragOverCol} mobileCol={mobileCol} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onTaskClick={setDetailTask} onAddTask={colId=>can(currentUser,"create_task")&&setTaskModal({mode:"create",task:{},defaultColumn:colId})} onMoveTask={moveTask} currentUser={currentUser} users={users}/>}
             {view==="list"&&<ListView tasks={filteredTasks} sort={sort} toggleSort={toggleSort} onTaskClick={setDetailTask} users={users}/>}
@@ -1696,6 +2171,12 @@ function App(){
 
       {/* FILTER PANEL */}
       {showFilterPanel&&<FilterPanel filters={filters} addFilter={addFilter} removeFilter={removeFilter} clearFilters={clearFilters} onClose={()=>setShowFilterPanel(false)} columns={COLUMNS} users={users}/>}
+
+      {/* PROFILE MODAL */}
+      {showProfile&&<ProfileModal currentUser={currentUser} users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} onClose={()=>setShowProfile(false)}/>}
+
+      {/* PUNCH REPORT MODAL */}
+      {showPunchReport&&<PunchReportModal tasks={tasks} users={users} currentUser={currentUser} onClose={()=>setShowPunchReport(false)} onOpenTask={t=>{setDetailTask(t);setShowPunchReport(false);}}/>}
     </>
   );
 }
