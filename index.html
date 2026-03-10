@@ -399,6 +399,20 @@ textarea.fi{resize:vertical;min-height:80px;}
 }
 #print-area{display:none;}
 
+
+/* ── INVITE LINK ── */
+.invite-link-box{background:#0e1118;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-top:8px;}
+.invite-link-url{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;color:#93c5fd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.invite-link-copy{background:#2563eb;border:none;color:#fff;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Figtree',sans-serif;flex-shrink:0;transition:background .15s;}
+.invite-link-copy:hover{background:#1d4ed8;}
+.invite-link-copy.copied{background:#16a34a;}
+/* ── WELCOME SCREEN (first login via invite link) ── */
+.welcome-page{min-height:100vh;background:linear-gradient(135deg,#0e1118 0%,#1e2434 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+.welcome-card{background:#fff;border-radius:20px;padding:36px 40px;width:100%;max-width:440px;box-shadow:0 30px 80px rgba(0,0,0,.4);text-align:center;}
+.welcome-av{width:72px;height:72px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 14px;}
+.welcome-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;}
+.welcome-sub{font-size:14px;color:#6b7280;margin-bottom:24px;line-height:1.5;}
+
 </style>
 </head>
 <body>
@@ -562,6 +576,53 @@ function PhotoUploadZone({onFiles,disabled=false}){
 /* ════════════════════════════════
    LOGIN PAGE
 ════════════════════════════════ */
+
+/* ════════════════════════════════
+   INVITE LINK UTILITIES
+════════════════════════════════ */
+const encodeInvite = user => {
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(user)))); }
+  catch { return null; }
+};
+const decodeInvite = token => {
+  try { return JSON.parse(decodeURIComponent(escape(atob(token)))); }
+  catch { return null; }
+};
+const buildInviteUrl = user => {
+  const base = window.location.href.split('#')[0];
+  return base + '#invite=' + encodeInvite(user);
+};
+
+/* ════════════════════════════════
+   WELCOME SCREEN  (shown on first
+   visit via an invite link)
+════════════════════════════════ */
+function WelcomePage({user, onContinue}) {
+  return (
+    <div className="welcome-page">
+      <div className="welcome-card">
+        <div className="welcome-av" style={{background:user.color}}>{user.initials}</div>
+        <div className="welcome-title">Welcome, {user.name.split(' ')[0]}! 👋</div>
+        <div className="welcome-sub">
+          Your FieldWork account has been set up.<br/>
+          Sign in below with your credentials to get started.
+        </div>
+        <div style={{background:"#f8f9fc",borderRadius:10,padding:"14px 16px",textAlign:"left",marginBottom:20}}>
+          {[["Email",user.email],["Password",user.password],["Role",user.role]].map(([l,v])=>(
+            <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #eaecf0",fontSize:13}}>
+              <span style={{color:"#9ca3af"}}>{l}</span>
+              <span style={{fontFamily:l==="Email"||l==="Password"?"'JetBrains Mono',monospace":"inherit",fontWeight:600}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-p" style={{width:"100%",justifyContent:"center",padding:"11px",fontSize:15}} onClick={onContinue}>
+          Continue to Sign In →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function LoginPage({users,onLogin}){
   const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [err,setErr]=useState("");
   const submit=e=>{
@@ -1798,6 +1859,94 @@ ${printItems.map((t,i)=>{
   );
 }
 
+
+/* ════════════════════════════════
+   CREDENTIALS MODAL with invite link
+════════════════════════════════ */
+function CredentialsModal({creds, onClose}) {
+  const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const inviteUrl = buildInviteUrl(creds);
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteUrl).catch(()=>{
+      const ta=document.createElement("textarea");ta.value=inviteUrl;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+    });
+    setLinkCopied(true);
+    setTimeout(()=>setLinkCopied(false), 2500);
+  };
+
+  const copyAll = () => {
+    const txt = `FieldWork Login\nName: ${creds.name}\nEmail: ${creds.email}\nPassword: ${creds.password}\nRole: ${creds.role}\nLink: ${inviteUrl}`;
+    navigator.clipboard.writeText(txt).catch(()=>{
+      const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
+    });
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 2500);
+  };
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  return (
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:460}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd">
+          <h2 className="m-ht">✅ User Created</h2>
+          <button className="btn btn-g btn-ic" onClick={onClose}>✕</button>
+        </div>
+        <div className="m-bd">
+          <p style={{fontSize:13.5,color:"#6b7280"}}>
+            Share the <strong>invite link</strong> below with <strong>{creds.name}</strong>.
+            When they open it, their account will be set up automatically.
+          </p>
+
+          {/* HOW IT WORKS */}
+          <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"12px 14px",fontSize:12.5,color:"#1d4ed8",lineHeight:1.7}}>
+            <strong>How it works:</strong><br/>
+            1. Copy the invite link and send it (email, WhatsApp, Teams, etc.)<br/>
+            2. They open the link in their browser<br/>
+            3. Their account is installed automatically<br/>
+            4. They sign in with the credentials below
+          </div>
+
+          {/* INVITE LINK */}
+          <div>
+            <div className="fl" style={{marginBottom:6}}>🔗 Invite Link</div>
+            <div className="invite-link-box">
+              <span className="invite-link-url">{inviteUrl}</span>
+              <button className={`invite-link-copy${linkCopied?" copied":""}`} onClick={copyLink}>
+                {linkCopied?"✓ Copied!":"Copy Link"}
+              </button>
+            </div>
+          </div>
+
+          {/* CREDENTIALS */}
+          <div className="invite-creds">
+            <div className="invite-creds-title">Login Credentials</div>
+            {[["Name",creds.name],["Email",creds.email],["Password",creds.password],["Role",creds.role]].map(([l,v])=>(
+              <div key={l} className="invite-creds-row">
+                <span className="invite-creds-label">{l}</span>
+                <span className="invite-creds-val">{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <p style={{fontSize:11.5,color:"#9ca3af"}}>
+            ⚠️ The invite link contains login credentials — only share it with the intended person.
+            Advise them to change their password after first login.
+          </p>
+        </div>
+        <div className="m-ft">
+          <button className={`btn${copied?" btn-success":" btn-s"}`} onClick={copyAll}>
+            {copied?"✓ Copied!":"📋 Copy All"}
+          </button>
+          <button className="btn btn-p" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════════════
    USERS PAGE (Admin only)
 ════════════════════════════════ */
@@ -1867,22 +2016,7 @@ function UsersPage({users,setUsers,currentUser}){
       {editUser&&<UserFormModal title={`Edit — ${editUser.name}`} initial={editUser} onSave={handleEdit} onClose={()=>setEditUser(null)}/>}
 
       {newCreds&&(
-        <div className="modal-ov" onClick={()=>setNewCreds(null)}>
-          <div className="modal" style={{maxWidth:420}} onClick={e=>e.stopPropagation()}>
-            <div className="m-hd"><h2 className="m-ht">✅ User Created</h2><button className="btn btn-g btn-ic" onClick={()=>setNewCreds(null)}>✕</button></div>
-            <div className="m-bd">
-              <p style={{fontSize:13.5,color:"#6b7280"}}>Share these credentials with <strong>{newCreds.name}</strong> so they can sign in:</p>
-              <div className="invite-creds">
-                <div className="invite-creds-title">Login Credentials</div>
-                {[["Name",newCreds.name],["Email",newCreds.email],["Password",newCreds.password],["Role",newCreds.role]].map(([l,v])=>(
-                  <div key={l} className="invite-creds-row"><span className="invite-creds-label">{l}</span><span className="invite-creds-val">{v}</span></div>
-                ))}
-              </div>
-              <p style={{fontSize:12,color:"#9ca3af"}}>⚠️ The password should be changed by the user on first login. Keep these credentials secure.</p>
-            </div>
-            <div className="m-ft"><button className="btn btn-p" onClick={()=>setNewCreds(null)}>Done</button></div>
-          </div>
-        </div>
+        <CredentialsModal creds={newCreds} onClose={()=>setNewCreds(null)}/>
       )}
     </div>
   );
@@ -1994,6 +2128,7 @@ function App(){
   const [saveFlash,setSaveFlash]=useState(false);
   const [showProfile,setShowProfile]=useState(false);
   const [showPunchReport,setShowPunchReport]=useState(false);
+  const [welcomeUser,setWelcomeUser]=useState(null); // set when arriving via invite link
   const sortMenuRef=useRef();
   const undoTimerRef=useRef();
   const importRef=useRef();
@@ -2014,6 +2149,22 @@ function App(){
 
   useEffect(()=>{const check=()=>{if(window.innerWidth<768)setSidebarOpen(false);else setSidebarOpen(true);};check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
   useEffect(()=>{const h=e=>{if(sortMenuRef.current&&!sortMenuRef.current.contains(e.target))setShowSortMenu(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+
+  /* Parse invite link on first load */
+  useEffect(()=>{
+    const hash=window.location.hash;
+    if(!hash.startsWith('#invite=')) return;
+    const token=hash.slice(8);
+    const inv=decodeInvite(token);
+    if(!inv||!inv.email||!inv.password) return;
+    setUsers(prev=>{
+      const exists=prev.some(u=>u.email.toLowerCase()===inv.email.toLowerCase());
+      if(exists) return prev;
+      return [...prev,{...inv,status:'active'}];
+    });
+    setWelcomeUser(inv);
+    window.history.replaceState(null,'',window.location.pathname+window.location.search);
+  },[]);
 
   const filteredTasks=useMemo(()=>{
     let res=[...tasks];
@@ -2090,7 +2241,9 @@ function App(){
   const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
   const isSpecialPage=["database","users","photos"].includes(activeNav);
 
+  if(!currentUser && welcomeUser) return <WelcomePage user={welcomeUser} onContinue={()=>setWelcomeUser(null)}/>;
   if(!currentUser) return <LoginPage users={users} onLogin={u=>{if(u.status==="invited"){const activated={...u,status:"active"};setUsers(prev=>prev.map(x=>x.id===activated.id?activated:x));setCurrentUser(activated);}else{setCurrentUser(u);}}}/>;
+
 
   return(
     <>
