@@ -2090,7 +2090,7 @@ function App(){
   const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
   const isSpecialPage=["database","users","photos"].includes(activeNav);
 
-  if(!currentUser) return <LoginPage users={users} onLogin={u=>{const activated={...u,status:"active"};setUsers(prev=>prev.map(x=>x.id===activated.id?activated:x));setCurrentUser(activated);}}/>;
+  if(!currentUser) return <LoginPage users={users} onLogin={u=>{if(u.status==="invited"){const activated={...u,status:"active"};setUsers(prev=>prev.map(x=>x.id===activated.id?activated:x));setCurrentUser(activated);}else{setCurrentUser(u);}}}/>;
 
   return(
     <>
