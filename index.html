@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<meta name="description" content="FieldWork — Professional task management for field engineering and shipyard projects. Kanban board, checklists, photos, role-based access."/>
+<meta name="theme-color" content="#0e1118"/>
+<meta property="og:title" content="FieldWork — Task Management"/>
+<meta property="og:description" content="Professional task management for field engineering projects."/>
+<meta property="og:type" content="website"/>
+<title>FieldWork — Task Management</title>
+<!-- Favicon via SVG data URI -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='4' y='4' width='10' height='10' rx='2' fill='white'/><rect x='18' y='4' width='10' height='10' rx='2' fill='white'/><rect x='4' y='18' width='10' height='10' rx='2' fill='white'/><line x1='18' y1='23' x2='28' y2='23' stroke='white' stroke-width='2.5' stroke-linecap='round'/><line x1='23' y1='18' x2='23' y2='28' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{height:100%;font-family:'Figtree',sans-serif;}
+body{background:#eef0f6;color:#1a1d23;}
+:focus-visible{outline:2px solid #2563eb;outline-offset:2px;border-radius:3px;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:10px;}
+
+/* ── LOGIN ── */
+.login-page{min-height:100vh;background:linear-gradient(135deg,#0e1118 0%,#1e2434 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:#fff;border-radius:20px;padding:40px 44px;width:100%;max-width:400px;box-shadow:0 30px 80px rgba(0,0,0,.4);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.login-logo-ic{width:40px;height:40px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.login-logo-tx{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em;}
+.login-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;margin-bottom:6px;}
+.login-sub{font-size:14px;color:#9ca3af;margin-bottom:28px;}
+.login-err{background:#fef2f2;border:1px solid #fecaca;color:#ef4444;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;}
+.login-role-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── SHELL ── */
+.fw-app{display:flex;height:100vh;overflow:hidden;}
+/* ── SIDEBAR ── */
+.fw-sb{width:224px;min-width:224px;background:#0e1118;display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s;flex-shrink:0;z-index:300;}
+.fw-sb.closed{width:0;min-width:0;}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;white-space:nowrap;flex-shrink:0;}
+.sb-logo-ic{width:32px;height:32px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-logo-tx{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;letter-spacing:-.03em;}
+.sb-nav{overflow-y:auto;flex:1;padding:6px 10px;}
+.sb-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:14px 10px 5px;white-space:nowrap;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:rgba(255,255,255,.55);font-size:13.5px;font-weight:500;transition:all .15s;white-space:nowrap;background:none;border:none;width:100%;text-align:left;font-family:'Figtree',sans-serif;}
+.sb-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9);}
+.sb-item.act{background:rgba(37,99,235,.25);color:#60a5fa;}
+.sb-item.disabled{opacity:.3;cursor:not-allowed;pointer-events:none;}
+.sb-badge{margin-left:auto;background:rgba(255,255,255,.1);color:rgba(255,255,255,.45);font-size:11px;font-weight:600;padding:1px 7px;border-radius:10px;font-family:'JetBrains Mono',monospace;}
+.sb-item.act .sb-badge{background:rgba(37,99,235,.4);color:#93c5fd;}
+.sb-foot{padding:12px 10px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+.sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:6px;}
+.sb-user-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-user-info{flex:1;min-width:0;}
+.sb-user-name{font-size:12.5px;color:rgba(255,255,255,.8);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-user-role{font-size:10.5px;color:rgba(255,255,255,.35);text-transform:capitalize;}
+.sb-logout{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;flex-shrink:0;}
+.sb-logout:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.07);}
+.sb-fbtns{display:flex;gap:4px;}
+.sb-fb{flex:1;padding:8px;border-radius:8px;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:14px;}
+.sb-fb:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);}
+/* ── MAIN ── */
+.fw-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+/* ── TOP BAR ── */
+.fw-tb{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 20px;display:flex;align-items:center;gap:8px;height:56px;flex-shrink:0;}
+.tb-l{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.tb-r{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.hmbgr{background:none;border:none;padding:6px;cursor:pointer;color:#6b7280;border-radius:6px;display:flex;align-items:center;transition:all .15s;}
+.hmbgr:hover{background:#f3f4f6;color:#1a1d23;}
+.bc{font-size:13px;color:#9ca3af;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;min-width:0;}
+.bc-s{color:#d1d5db;}
+.bc-c{color:#1a1d23;font-weight:600;}
+.tb-srch{display:flex;align-items:center;gap:7px;background:#f6f8fc;border:1.5px solid #e9ebee;border-radius:8px;padding:6px 11px;transition:all .15s;max-width:220px;flex:1;min-width:0;}
+.tb-srch:focus-within{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.tb-srch input{background:none;border:none;outline:none;font-size:13px;font-family:'Figtree',sans-serif;color:#1a1d23;width:100%;}
+.tb-srch input::placeholder{color:#9ca3af;}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:'Figtree',sans-serif;white-space:nowrap;line-height:1.2;}
+.btn-p{background:#2563eb;color:#fff;}
+.btn-p:hover{background:#1d4ed8;}
+.btn-s{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
+.btn-s:hover{background:#eaecf0;}
+.btn-g{background:none;color:#6b7280;border:1px solid transparent;padding:7px 10px;}
+.btn-g:hover{background:#f3f4f6;color:#374151;}
+.btn-ic{padding:7px;}
+.btn-del{background:#fef2f2;color:#ef4444;border:1px solid #fecaca;}
+.btn-del:hover{background:#fee2e2;}
+.btn-success{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;}
+.btn-warn{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
+.fbadge{background:#2563eb;color:#fff;font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
+.vt{display:flex;background:#f3f4f6;border-radius:8px;padding:3px;gap:2px;}
+.vt-b{padding:5px 10px;border-radius:6px;background:none;border:none;cursor:pointer;color:#6b7280;font-size:12.5px;font-weight:600;transition:all .15s;font-family:'Figtree',sans-serif;display:flex;align-items:center;gap:4px;}
+.vt-b.act{background:#fff;color:#1a1d23;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.notif{position:relative;background:none;border:none;cursor:pointer;color:#6b7280;padding:7px;border-radius:8px;display:flex;align-items:center;transition:all .15s;}
+.notif:hover{background:#f3f4f6;}
+.notif-dot{position:absolute;top:3px;right:3px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.save-flash{display:flex;align-items:center;gap:4px;font-size:11.5px;color:#16a34a;font-weight:600;padding:3px 8px;background:#dcfce7;border-radius:6px;animation:fadeIn .2s ease;white-space:nowrap;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.u-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;position:relative;}
+.u-av-role{position:absolute;bottom:-3px;right:-3px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;}
+/* ── LEGEND ── */
+.fw-legend{display:flex;gap:14px;padding:6px 20px;background:#fff;border-bottom:1px solid #f0f2f7;flex-wrap:wrap;flex-shrink:0;align-items:center;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:#6b7280;}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.leg-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#c4c9d4;margin-right:4px;}
+/* ── FILTER BAR ── */
+.fw-fb{background:#fff;border-bottom:1px solid #eaecf0;padding:0 20px;display:flex;align-items:center;gap:7px;min-height:42px;flex-wrap:wrap;flex-shrink:0;}
+.f-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;font-size:12px;font-weight:600;}
+.f-chip-x{background:none;border:none;cursor:pointer;color:#3b82f6;padding:0;display:flex;align-items:center;font-size:16px;line-height:1;}
+.stat-info{font-size:12px;color:#9ca3af;margin-left:auto;white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+.clear-all{font-size:12px;color:#ef4444;background:none;border:none;cursor:pointer;font-weight:600;font-family:'Figtree',sans-serif;}
+/* ── BOARD ── */
+.mob-cs{display:none;padding:8px 14px;background:#fff;border-bottom:1px solid #e5e7eb;overflow-x:auto;gap:6px;flex-shrink:0;}
+.mob-pill{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid;white-space:nowrap;flex-shrink:0;transition:all .15s;font-family:'Figtree',sans-serif;}
+.fw-board{flex:1;overflow-x:auto;overflow-y:hidden;padding:14px 20px;display:flex;gap:10px;align-items:flex-start;}
+.fw-col{flex-shrink:0;width:262px;display:flex;flex-direction:column;background:#f4f6fb;border-radius:12px;overflow:hidden;border:2px solid transparent;transition:border-color .15s,background .15s;max-height:100%;}
+.fw-col.dov{background:#eff6ff;}
+.col-hd{padding:11px 13px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e8eaf0;flex-shrink:0;}
+.col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.col-title{font-size:12.5px;font-weight:700;color:#1a1d23;flex:1;font-family:'Syne',sans-serif;}
+.col-cnt{background:#e2e5ed;color:#6b7280;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:'JetBrains Mono',monospace;}
+.col-body{padding:8px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:7px;min-height:60px;}
+.col-add{display:flex;align-items:center;gap:6px;padding:7px 8px;background:none;border:1.5px dashed #ced1db;border-radius:8px;cursor:pointer;color:#9ca3af;font-size:12.5px;font-weight:600;width:100%;transition:all .15s;flex-shrink:0;font-family:'Figtree',sans-serif;margin-top:2px;}
+.col-add:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff;}
+.col-add.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+.col-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 12px;text-align:center;color:#c4c9d4;gap:5px;}
+.col-empty-txt{font-size:11.5px;font-weight:500;line-height:1.5;}
+/* ── TASK CARD ── */
+.tc{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;border:1.5px solid #eef0f6;transition:box-shadow .15s,border-color .15s;user-select:none;position:relative;}
+.tc:hover{box-shadow:0 4px 14px rgba(0,0,0,.1);border-color:#e0e3ea;}
+.tc.dragging{opacity:.35;cursor:grabbing;}
+.tc.overdue{border-left:3px solid #ef4444;}
+.tc-handle{position:absolute;top:10px;right:8px;color:#d1d5db;opacity:0;transition:opacity .15s;font-size:14px;pointer-events:none;}
+.tc:hover .tc-handle{opacity:1;}
+.tc-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:#b0b6c2;margin-bottom:4px;}
+.tc-title{font-size:13.5px;font-weight:600;color:#1a1d23;margin-bottom:4px;line-height:1.4;}
+.tc-desc{font-size:12px;color:#7c8494;line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tc-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.tc-pri{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:3px;}
+.tc-due{font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:2px;}
+.tc-due.late{color:#ef4444;font-weight:700;}
+.tc-av{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;margin-left:auto;flex-shrink:0;position:relative;}
+.tc-av-tip{position:absolute;bottom:calc(100%+4px);right:0;background:#1a1d23;color:#fff;font-size:11px;padding:4px 8px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
+.tc-av:hover .tc-av-tip{opacity:1;}
+.tc-photos-badge{display:flex;align-items:center;gap:3px;font-size:10.5px;color:#6b7280;}
+.tc-move-btn{display:none;font-size:11.5px;color:#6b7280;background:#f3f4f6;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-family:'Figtree',sans-serif;font-weight:600;margin-top:7px;width:100%;text-align:left;transition:all .15s;}
+/* ── LIST VIEW ── */
+.fw-list{flex:1;overflow-y:auto;padding:14px 20px;}
+.list-wrap{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.lt{width:100%;border-collapse:collapse;}
+.lt th{background:#f4f6fb;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #eaecf0;cursor:pointer;white-space:nowrap;user-select:none;}
+.lt th:hover{background:#edeef4;}
+.lt td{padding:11px 14px;font-size:13.5px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+.lt tr:last-child td{border-bottom:none;}
+.lt tr:hover td{background:#fafbfd;cursor:pointer;}
+.sa{font-size:11px;margin-left:2px;color:#9ca3af;}
+.lt-empty{text-align:center;color:#9ca3af;font-size:14px;padding:40px!important;}
+/* ── CALENDAR ── */
+.fw-cal{flex:1;overflow-y:auto;padding:14px 20px;}
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.cal-month{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;flex:1;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e7eb;border-radius:12px;overflow:hidden;}
+.cal-dh{background:#f4f6fb;padding:8px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;}
+.cal-cell{background:#fff;min-height:90px;padding:6px;}
+.cal-cell.om{background:#fafbfc;}
+.cal-num{font-size:12px;font-weight:600;color:#9ca3af;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.cal-cell.today .cal-num{background:#2563eb;color:#fff;}
+.cal-task{font-size:11px;padding:2px 5px;border-radius:4px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;font-weight:500;}
+.cal-more{font-size:10.5px;color:#9ca3af;padding:1px 4px;}
+/* ── TOAST ── */
+.fw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1d23;color:#fff;border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(0,0,0,.2);z-index:3000;font-size:13.5px;font-weight:500;white-space:nowrap;animation:tIn .25s ease;}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.undo-b{background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12.5px;font-family:'Figtree',sans-serif;}
+/* ── MODAL BASE ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}
+.modal{background:#fff;border-radius:16px;width:100%;max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:mIn .2s ease;}
+@keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.m-hd{padding:18px 24px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:5;}
+.m-ht{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;}
+.m-bd{padding:18px 24px;display:flex;flex-direction:column;gap:14px;}
+.m-ft{padding:14px 24px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end;align-items:center;position:sticky;bottom:0;background:#fff;z-index:5;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fl{font-size:11.5px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.05em;}
+.fi{padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;font-family:'Figtree',sans-serif;color:#1a1d23;background:#fff;transition:border-color .15s;width:100%;}
+.fi:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+textarea.fi{resize:vertical;min-height:80px;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.m-sec{border-top:1px solid #f3f4f6;padding-top:14px;margin-top:2px;}
+.m-sec-title{font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+/* ── SORT MENU ── */
+.sort-menu{position:absolute;top:calc(100%+6px);right:0;background:#fff;border-radius:10px;box-shadow:0 8px 25px rgba(0,0,0,.12);padding:6px;z-index:200;min-width:185px;border:1px solid #e5e7eb;animation:dropIn .15s ease;}
+@keyframes dropIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.so{padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:space-between;color:#374151;transition:background .1s;}
+.so:hover{background:#f3f4f6;}
+.so.act{background:#eff6ff;color:#2563eb;font-weight:600;}
+/* ── FILTER PANEL ── */
+.fp-ov{position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:500;}
+.fp{position:fixed;right:0;top:0;bottom:0;width:300px;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.1);z-index:501;display:flex;flex-direction:column;animation:fpIn .25s ease;}
+@keyframes fpIn{from{transform:translateX(100%)}to{transform:none}}
+.fp-hd{padding:20px 20px 16px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;}
+.fp-ht{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.fp-bd{padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px;}
+.fp-ft{padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;gap:8px;}
+.fp-sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:7px;}
+.fp-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13.5px;color:#374151;transition:background .1s;background:none;border:none;width:100%;text-align:left;font-family:'Figtree',sans-serif;}
+.fp-opt:hover{background:#f3f4f6;}
+.fp-opt.sel{background:#eff6ff;color:#2563eb;font-weight:600;}
+/* ══ TASK DETAIL PANEL ══ */
+.td-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:stretch;justify-content:flex-end;backdrop-filter:blur(2px);}
+.td-panel{width:100%;max-width:920px;background:#fff;display:flex;flex-direction:column;overflow:hidden;animation:tdIn .25s ease;box-shadow:-8px 0 40px rgba(0,0,0,.15);}
+@keyframes tdIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.td-hd{background:#fff;border-bottom:1px solid #eaecf0;padding:12px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.td-hd-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.td-hd-meta{font-size:13px;color:#9ca3af;font-family:'JetBrains Mono',monospace;}
+.td-body{display:flex;flex:1;overflow:hidden;}
+.td-left{flex:1;overflow-y:auto;padding:20px 22px;display:flex;flex-direction:column;gap:20px;min-width:0;}
+.td-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#1a1d23;line-height:1.3;flex:1;word-break:break-word;}
+.td-title-input{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#1a1d23;border:1.5px solid #2563eb;border-radius:8px;padding:6px 10px;width:100%;box-shadow:0 0 0 3px rgba(37,99,235,.1);outline:none;}
+.td-edit-btn{background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px;border-radius:5px;flex-shrink:0;margin-top:3px;font-size:15px;}
+.td-edit-btn:hover{color:#374151;background:#f3f4f6;}
+.td-section{display:flex;flex-direction:column;gap:10px;}
+.td-sec-hd{display:flex;align-items:center;gap:8px;}
+.td-sec-title{font-size:13px;font-weight:700;color:#374151;}
+.td-sec-btn{background:none;border:none;color:#2563eb;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Figtree',sans-serif;}
+.td-sec-btn:hover{text-decoration:underline;}
+.td-checklist-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:#f8f9fc;border-radius:8px;}
+.td-checklist-item.done .td-cli-text{text-decoration:line-through;color:#9ca3af;}
+.td-cli-cb{width:16px;height:16px;accent-color:#2563eb;cursor:pointer;flex-shrink:0;margin-top:1px;}
+.td-cli-text{flex:1;font-size:13.5px;color:#374151;}
+.td-cli-del{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:16px;line-height:1;}
+.td-cli-del:hover{color:#ef4444;}
+.td-related-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8f9fc;border-radius:8px;}
+.td-ri-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.td-activity{display:flex;flex-direction:column;gap:4px;}
+.td-act-entry{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f3f4f6;}
+.td-act-entry:last-child{border-bottom:none;}
+.td-act-av{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
+.td-act-body{flex:1;min-width:0;}
+.td-act-meta{font-size:11.5px;color:#9ca3af;margin-bottom:3px;}
+.td-act-meta strong{color:#374151;font-weight:600;}
+.td-act-text{font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;}
+.td-msg-bar{border-top:1px solid #eaecf0;padding:12px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0;background:#fff;}
+.td-msg-input{flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:13.5px;font-family:'Figtree',sans-serif;color:#1a1d23;outline:none;transition:border-color .15s;}
+.td-msg-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.td-share-btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Figtree',sans-serif;}
+.td-share-btn:hover{background:#1d4ed8;}
+.td-right{width:295px;flex-shrink:0;background:#f8f9fc;border-left:1px solid #eaecf0;display:flex;flex-direction:column;overflow:hidden;}
+.td-attr-hd{padding:13px 16px 11px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.td-attr-title{font-size:13px;font-weight:700;color:#1a1d23;}
+.td-attr-body{overflow-y:auto;flex:1;padding:4px 0;}
+.td-attr-row{display:flex;align-items:center;padding:6px 14px;gap:8px;border-bottom:1px solid #f0f2f7;min-height:40px;}
+.td-attr-label{font-size:11.5px;color:#6b7280;width:108px;flex-shrink:0;display:flex;align-items:center;gap:5px;}
+.td-attr-val{flex:1;min-width:0;}
+.td-attr-select{width:100%;border:1.5px solid #e5e7eb;border-radius:6px;padding:4px 7px;font-size:12px;font-family:'Figtree',sans-serif;color:#1a1d23;background:#fff;cursor:pointer;outline:none;}
+.td-attr-select:focus{border-color:#2563eb;}
+.td-attr-select:disabled{background:#f3f4f6;cursor:not-allowed;color:#9ca3af;}
+.td-attr-date{width:100%;border:1.5px solid #e5e7eb;border-radius:6px;padding:4px 7px;font-size:12px;font-family:'Figtree',sans-serif;color:#1a1d23;background:#fff;outline:none;}
+.td-attr-date:focus{border-color:#2563eb;}
+.td-attr-date:disabled{background:#f3f4f6;cursor:not-allowed;}
+.td-attr-edit-input{flex:1;border:1.5px solid #2563eb;border-radius:6px;padding:3px 7px;font-size:12px;font-family:'Figtree',sans-serif;color:#1a1d23;outline:none;min-width:0;}
+.td-attr-edit-btn{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:13px;padding:2px;border-radius:4px;}
+.td-attr-edit-btn:hover{color:#374151;}
+.td-tag{font-size:11px;padding:2px 7px;border-radius:12px;font-weight:600;}
+.td-watcher-av{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;cursor:default;position:relative;}
+.td-watcher-tip{position:absolute;bottom:calc(100%+3px);left:50%;transform:translateX(-50%);background:#1a1d23;color:#fff;font-size:10px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .1s;}
+.td-watcher-av:hover .td-watcher-tip{opacity:1;}
+/* ── PHOTOS ── */
+.photos-page{flex:1;overflow-y:auto;padding:20px;}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.photo-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:box-shadow .15s;}
+.photo-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12);}
+.photo-card img{width:100%;height:150px;object-fit:cover;display:block;}
+.photo-card-body{padding:10px 12px;}
+.photo-card-name{font-size:12.5px;font-weight:600;color:#1a1d23;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px;}
+.photo-card-meta{font-size:11px;color:#9ca3af;}
+.photo-card-task{font-size:11.5px;color:#2563eb;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:5px;}
+.photo-card-task:hover{text-decoration:underline;}
+.photo-card-actions{display:flex;gap:5px;margin-top:8px;}
+.photo-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;background:#fafbfc;}
+.photo-upload-zone:hover,.photo-upload-zone.drag{border-color:#2563eb;background:#eff6ff;}
+.photo-upload-zone p{font-size:13px;color:#9ca3af;margin-top:8px;}
+.photo-thumb{width:70px;height:70px;border-radius:8px;object-fit:cover;border:2px solid #e5e7eb;cursor:pointer;transition:border-color .15s;}
+.photo-thumb:hover{border-color:#2563eb;}
+.photo-thumbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+.photo-thumb-wrap{position:relative;}
+.photo-thumb-del{position:absolute;top:-5px;right:-5px;width:16px;height:16px;background:#ef4444;border:none;border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+/* ── DATABASE PAGE ── */
+.db-page{flex:1;overflow-y:auto;padding:20px;}
+.db-page-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
+.db-page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#1a1d23;}
+.db-page-desc{font-size:13.5px;color:#6b7280;margin-top:3px;}
+.db-tabs{display:flex;gap:2px;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:18px;flex-wrap:wrap;}
+.db-tab{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#6b7280;border:none;background:none;font-family:'Figtree',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.db-tab.act{background:#fff;color:#1a1d23;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.db-tab-cnt{background:#e5e7eb;color:#6b7280;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;font-family:'JetBrains Mono',monospace;}
+.db-tab.act .db-tab-cnt{background:#dbeafe;color:#2563eb;}
+.db-card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;margin-bottom:16px;}
+.db-card-hd{padding:14px 18px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.db-card-title{font-size:14px;font-weight:700;color:#1a1d23;display:flex;align-items:center;gap:8px;}
+.db-card-desc{font-size:12px;color:#9ca3af;margin-top:2px;}
+.db-table{width:100%;border-collapse:collapse;}
+.db-table th{background:#f8f9fc;padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #eaecf0;}
+.db-table td{padding:10px 16px;font-size:13.5px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+.db-table tr:last-child td{border-bottom:none;}
+.db-table tr:hover td{background:#fafbfd;}
+.db-empty{text-align:center;color:#9ca3af;padding:30px;font-size:14px;}
+.db-add-row{padding:10px 16px;border-top:1px solid #f3f4f6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fafbfd;}
+.db-add-input{flex:1;min-width:120px;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 11px;font-size:13.5px;font-family:'Figtree',sans-serif;color:#1a1d23;outline:none;background:#fff;}
+.db-add-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.db-color-swatch{width:24px;height:24px;border-radius:6px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
+.db-color-swatch.sel{border-color:#1a1d23;}
+.color-swatches{display:flex;gap:3px;flex-wrap:wrap;}
+.db-inline-edit{border:1.5px solid #2563eb;border-radius:6px;padding:4px 8px;font-size:13px;font-family:'Figtree',sans-serif;color:#1a1d23;outline:none;width:100%;background:#fff;}
+.db-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600;}
+/* ── USERS PAGE ── */
+.users-page{flex:1;overflow-y:auto;padding:20px;}
+.user-card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px;margin-bottom:10px;transition:box-shadow .15s;}
+.user-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.user-av-lg{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:15px;font-weight:700;color:#1a1d23;}
+.user-email{font-size:12.5px;color:#9ca3af;margin-top:1px;}
+.user-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;}
+.role-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:600;}
+.user-actions{display:flex;gap:6px;flex-shrink:0;}
+/* ── INVITE MODAL ── */
+.invite-creds{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-top:10px;}
+.invite-creds-title{font-size:12px;font-weight:700;color:#16a34a;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+.invite-creds-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #d1fae5;}
+.invite-creds-row:last-child{border-bottom:none;}
+.invite-creds-label{font-size:12px;color:#6b7280;}
+.invite-creds-val{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;color:#1a1d23;}
+/* ── ACCESS DENIED ── */
+.access-denied{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px;text-align:center;color:#9ca3af;}
+.access-denied-icon{font-size:48px;margin-bottom:16px;}
+.access-denied h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#374151;margin-bottom:8px;}
+/* ── MULTISELECT DROPDOWN ── */
+.ms-wrap{position:relative;width:100%;}
+.ms-trigger{cursor:pointer;display:flex;flex-wrap:wrap;gap:3px;min-height:34px;padding:4px 8px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fff;align-items:center;}
+.ms-trigger.sm{min-height:28px;padding:3px 7px;}
+.ms-trigger:hover{border-color:#9ca3af;}
+.ms-drop{position:absolute;top:calc(100%+4px);left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 8px 25px rgba(0,0,0,.15);border:1px solid #e5e7eb;z-index:150;max-height:200px;overflow-y:auto;padding:4px;}
+.ms-opt{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:#374151;transition:background .1s;border:none;background:none;width:100%;text-align:left;font-family:'Figtree',sans-serif;}
+.ms-opt:hover{background:#f3f4f6;}
+.ms-opt.sel{background:#eff6ff;color:#2563eb;font-weight:600;}
+/* ── RESPONSIVE ── */
+@media(max-width:767px){
+  body{overflow:auto;}
+  .fw-app{height:auto;min-height:100vh;}
+  .fw-sb{position:fixed;height:100vh;top:0;left:0;}
+  .fw-sb.closed{width:0;min-width:0;}
+  .fw-main{min-height:100vh;}
+  .fw-tb{padding:0 12px;height:52px;}
+  .fw-board{padding:10px;overflow-x:hidden;overflow-y:visible;height:auto;flex-direction:column;}
+  .fw-col{width:100%;max-height:none;}
+  .mob-cs{display:flex;}
+  .d-only{display:none!important;}
+  .tc-move-btn{display:block;}
+  .fp{width:92%;max-width:300px;}
+  .fw-fb,.fw-legend,.photos-page,.db-page,.users-page{padding-left:12px;padding-right:12px;}
+  .fr2,.fr3{grid-template-columns:1fr;}
+  .td-panel{max-width:100%;}
+  .td-right{display:none;}
+  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+}
+@media(min-width:768px){.m-only{display:none!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ════════════════════════════════
+   CONSTANTS
+════════════════════════════════ */
+const COL_COLORS={"due-today":"#ef4444","cat-a":"#f97316","cat-b":"#3b82f6","cat-c":"#8b5cf6","offshore":"#0891b2","verify-yard":"#d97706","verify-client":"#db2777","approved":"#16a34a"};
+const COLUMNS=[{id:"due-today",label:"Due Today"},{id:"cat-a",label:"Category A"},{id:"cat-b",label:"Category B"},{id:"cat-c",label:"Documentation"},{id:"offshore",label:"Offshore"},{id:"verify-yard",label:"Verify — Yard"},{id:"verify-client",label:"Verify — Client"},{id:"approved",label:"Approved"}];
+const PRI={high:{label:"High",color:"#ef4444",bg:"#fef2f2",icon:"▲"},medium:{label:"Medium",color:"#f59e0b",bg:"#fffbeb",icon:"◆"},low:{label:"Low",color:"#6b7280",bg:"#f9fafb",icon:"▼"}};
+const COLOR_PALETTE=["#ef4444","#f97316","#f59e0b","#16a34a","#0891b2","#3b82f6","#8b5cf6","#db2777","#6b7280","#1a1d23"];
+const ROLE_COLORS={admin:{bg:"#eff6ff",color:"#2563eb"},engineer:{bg:"#f0fdf4",color:"#16a34a"},viewer:{bg:"#fffbeb",color:"#d97706"}};
+const ROLE_ICONS={admin:"👑",engineer:"🔧",viewer:"👁️"};
+let _nextId=1065; const genId=()=>_nextId++;
+const TODAY=new Date().toISOString().split("T")[0];
+const fmtDate=d=>{if(!d)return"";const[,m,day]=d.split("-");const mn=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return`${mn[+m-1]} ${+day}`;};
+const isOverdue=d=>d&&d<TODAY;
+const sanitize=v=>{if(!v)return"";return String(v).replace(/^[=+\-@\t\r]+/,"");};
+const fmtSize=b=>{if(b<1024)return b+"B";if(b<1048576)return(b/1024).toFixed(1)+"KB";return(b/1048576).toFixed(1)+"MB";};
+
+/* ════════════════════════════════
+   PERMISSIONS
+════════════════════════════════ */
+const can=(user,action,task=null)=>{
+  if(!user) return false;
+  const r=user.role;
+  switch(action){
+    case"create_task": return r==="admin"||r==="engineer";
+    case"edit_task":   return r==="admin"||(r==="engineer"&&task&&task.assignee===user.id);
+    case"delete_task": return r==="admin";
+    case"close_task":  return r==="admin"||(r==="engineer"&&task&&task.assignee===user.id);
+    case"drag_task":   return r==="admin";
+    case"manage_db":   return r==="admin";
+    case"manage_users":return r==="admin";
+    case"view_photos": return true;
+    case"upload_photo":return r==="admin"||r==="engineer";
+    case"delete_photo":return r==="admin";
+    case"add_comment": return r==="admin"||r==="engineer";
+    case"view":        return true;
+    default: return false;
+  }
+};
+
+/* ════════════════════════════════
+   INITIAL DATABASE
+════════════════════════════════ */
+const INIT_DB={
+  locations:[{id:1,name:"Engine Room"},{id:2,name:"Deck 3"},{id:3,name:"Bridge"},{id:4,name:"Hull — Port"},{id:5,name:"Hull — Starboard"},{id:6,name:"Accommodation Block"},{id:7,name:"Pump Room"}],
+  rooms:[{id:1,name:"ER-01"},{id:2,name:"ER-02"},{id:3,name:"D3-01"},{id:4,name:"D3-02"},{id:5,name:"BRG-01"},{id:6,name:"ACC-101"},{id:7,name:"PR-01"}],
+  plans:[{id:1,name:"Hull Structural Plan Rev.4"},{id:2,name:"P&ID — Engine Room"},{id:3,name:"Electrical Schematic Rev.7"},{id:4,name:"Fire Safety Layout Rev.2"},{id:5,name:"HVAC Plan Rev.3"}],
+  categories:[{id:1,name:"Mechanical",color:"#3b82f6"},{id:2,name:"Electrical",color:"#f59e0b"},{id:3,name:"Structural",color:"#8b5cf6"},{id:4,name:"Safety",color:"#ef4444"},{id:5,name:"Documentation",color:"#6b7280"},{id:6,name:"Offshore",color:"#0891b2"}],
+  tags:[{id:1,name:"DNV",color:"#3b82f6"},{id:2,name:"SOLAS",color:"#ef4444"},{id:3,name:"IEC",color:"#f59e0b"},{id:4,name:"Class",color:"#8b5cf6"},{id:5,name:"Urgent",color:"#ef4444"},{id:6,name:"Punch",color:"#f97316"}],
+  suppliers:[{id:1,name:"Marine Parts BV"},{id:2,name:"Offshore Supplies Ltd"},{id:3,name:"IHC Holland"},{id:4,name:"Damen Technical"},{id:5,name:"ABB Marine"},{id:6,name:"Wärtsilä"}],
+  contractors:[{id:1,name:"Van Oord"},{id:2,name:"Heerema Marine"},{id:3,name:"SHL Offshore"},{id:4,name:"Allseas Group"},{id:5,name:"Boskalis"}],
+  reqCodes:[{id:1,name:"RC-2024-001"},{id:2,name:"RC-2024-002"},{id:3,name:"RC-2025-001"}],
+  originalStatuses:[{id:1,name:"Open"},{id:2,name:"In Progress"},{id:3,name:"Closed"},{id:4,name:"On Hold"}],
+};
+
+/* ════════════════════════════════
+   INITIAL USERS
+════════════════════════════════ */
+const INIT_USERS=[
+  {id:"GH",initials:"GH",name:"Georg Hansen",email:"g.hansen@fieldwork.com",password:"admin123",color:"#f97316",role:"admin",status:"active",joinedAt:"2026-01-01"},
+  {id:"MVA",initials:"MVA",name:"Maarten van Asten",email:"m.vanasten@fieldwork.com",password:"eng123",color:"#8b5cf6",role:"engineer",status:"active",joinedAt:"2026-01-05"},
+  {id:"JK",initials:"JK",name:"Jan Kowalski",email:"j.kowalski@fieldwork.com",password:"eng456",color:"#0891b2",role:"engineer",status:"active",joinedAt:"2026-01-10"},
+  {id:"RM",initials:"RM",name:"Reza Moradi",email:"r.moradi@fieldwork.com",password:"eng789",color:"#16a34a",role:"engineer",status:"active",joinedAt:"2026-01-12"},
+  {id:"TL",initials:"TL",name:"Tina Larsson",email:"t.larsson@fieldwork.com",password:"view123",color:"#db2777",role:"viewer",status:"active",joinedAt:"2026-01-15"},
+];
+
+/* ════════════════════════════════
+   SEED TASKS (compact)
+════════════════════════════════ */
+const mkAttrs=(o={})=>({category:"",location:"",roomNumber:"",plan:"",startDate:"",endDate:"",tags:[],watchersList:[],commissioningDoc:"",mcDoc:"",punchItem:"No",originalStatus:"Open",originalPunchNmbr:"",reqCode:"",supplier:"",poDescription:"",responsibleContractor:"",...o});
+const SEED_TASKS=[
+  {id:1052,title:"Replace corroded pipe flange — Section 4B",description:"Urgent replacement needed. Materials ordered and on site.",column:"due-today",assignee:"GH",priority:"high",dueDate:TODAY,createdAt:"2026-02-01",watchers:["MVA"],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Engine Room",roomNumber:"ER-01",plan:"P&ID — Engine Room",tags:["Urgent"],punchItem:"Yes",originalStatus:"Open",supplier:"Marine Parts BV",responsibleContractor:"Van Oord"}),checklist:[{id:1,text:"Inspect flange",done:true},{id:2,text:"Order parts",done:true},{id:3,text:"Welding crew",done:false},{id:4,text:"QC sign-off",done:false}],relatedTasks:[],activity:[{id:1,author:"GH",time:"2026-02-01 09:15",type:"comment",text:"Task created."},{id:2,author:"MVA",time:"2026-02-15 14:30",type:"comment",text:"Parts ordered from Marine Parts BV. ETA 5 days."}]},
+  {id:1036,title:"Verify weld quality — starboard joints",description:"Visual and NDT inspection required for all joints.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-12",createdAt:"2026-01-28",watchers:["MVA"],photos:[],attrs:mkAttrs({category:"Structural",location:"Hull — Starboard",plan:"Hull Structural Plan Rev.4",tags:["Class","DNV"],mcDoc:"MC-2024-088",punchItem:"No",originalStatus:"In Progress",reqCode:"RC-2024-001",responsibleContractor:"Heerema Marine"}),checklist:[{id:1,text:"Visual inspection",done:false},{id:2,text:"NDT test samples",done:false}],relatedTasks:[],activity:[{id:1,author:"GH",time:"2026-01-28 10:00",type:"comment",text:"Assigned."}]},
+  {id:1040,title:"Update fire suppression system drawings",description:"Incorporate recent layout changes from structural engineering.",column:"cat-b",assignee:"MVA",priority:"medium",dueDate:"2026-03-18",createdAt:"2026-01-29",watchers:[],photos:[],attrs:mkAttrs({category:"Documentation",location:"Bridge",roomNumber:"BRG-01",plan:"Fire Safety Layout Rev.2",tags:["SOLAS"],commissioningDoc:"CD-2024-012",punchItem:"No",originalStatus:"Open"}),checklist:[],relatedTasks:[],activity:[]},
+  {id:1043,title:"Install safety handrails — Deck 3",description:"Per SOLAS requirements. Materials on site.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-14",createdAt:"2026-01-30",watchers:["RM"],photos:[],attrs:mkAttrs({category:"Safety",location:"Deck 3",roomNumber:"D3-01",tags:["SOLAS","Urgent"],punchItem:"Yes",originalPunchNmbr:"P-2024-043",reqCode:"RC-2024-002",supplier:"IHC Holland",responsibleContractor:"Van Oord"}),checklist:[{id:1,text:"Measure and cut",done:false},{id:2,text:"Weld brackets",done:false},{id:3,text:"SOLAS check",done:false}],relatedTasks:[],activity:[]},
+  {id:1047,title:"Submit hull inspection report to DNV",description:"Classification report deadline approaching.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-11",createdAt:"2026-02-03",watchers:["MVA","TL"],photos:[],attrs:mkAttrs({category:"Documentation",location:"Hull — Port",plan:"Hull Structural Plan Rev.4",tags:["DNV","Class"],commissioningDoc:"CD-2024-015",punchItem:"No",originalStatus:"In Progress",reqCode:"RC-2024-002",responsibleContractor:"Heerema Marine"}),checklist:[{id:1,text:"Collect sign-offs",done:true},{id:2,text:"Compile photos",done:false},{id:3,text:"Draft report",done:false},{id:4,text:"Submit to DNV",done:false}],relatedTasks:[],activity:[]},
+  {id:1048,title:"Check bilge pump operation",description:"Monthly operational test per maintenance schedule.",column:"cat-b",assignee:"RM",priority:"low",dueDate:"2026-03-25",createdAt:"2026-02-04",watchers:[],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Pump Room",roomNumber:"PR-01"}),checklist:[{id:1,text:"Start test cycle",done:false},{id:2,text:"Log readings",done:false}],relatedTasks:[],activity:[]},
+  {id:1025,title:"Procurement specs — new anchor chain",description:"Quotes from minimum 3 approved suppliers.",column:"cat-a",assignee:"MVA",priority:"medium",dueDate:"2026-03-22",createdAt:"2026-01-20",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Mechanical",reqCode:"RC-2025-001",supplier:"Damen Technical",poDescription:"Anchor chain 76mm stud-link"}),checklist:[{id:1,text:"Draft spec",done:true},{id:2,text:"Send RFQ",done:false},{id:3,text:"Evaluate and award",done:false}],relatedTasks:[],activity:[]},
+  {id:1018,title:"Offshore crane certification renewal",description:"Lloyds certification expires end of month.",column:"offshore",assignee:"RM",priority:"high",dueDate:"2026-03-13",createdAt:"2026-01-18",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Offshore",location:"Deck 3",roomNumber:"D3-02",tags:["Class"],punchItem:"Yes",originalPunchNmbr:"P-2024-018",originalStatus:"In Progress",responsibleContractor:"Allseas Group"}),checklist:[{id:1,text:"Gather cert docs",done:false},{id:2,text:"Book Lloyds inspector",done:false}],relatedTasks:[],activity:[]},
+  {id:1055,title:"Yard inspection — propeller shaft",description:"Pre-installation check by classification body.",column:"verify-yard",assignee:"TL",priority:"medium",dueDate:"2026-03-17",createdAt:"2026-02-05",watchers:["RM"],photos:[],attrs:mkAttrs({category:"Mechanical",plan:"Hull Structural Plan Rev.4",tags:["Class","DNV"],mcDoc:"MC-2024-095",supplier:"Wärtsilä",responsibleContractor:"SHL Offshore"}),checklist:[],relatedTasks:[],activity:[]},
+  {id:1010,title:"Grease main engine bearings",description:"Routine maintenance — completed.",column:"approved",assignee:"RM",priority:"low",dueDate:"2026-03-05",createdAt:"2026-01-10",watchers:[],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Engine Room",roomNumber:"ER-01",originalStatus:"Closed"}),checklist:[{id:1,text:"Grease bearings 1-4",done:true},{id:2,text:"Log in maintenance book",done:true}],relatedTasks:[],activity:[{id:1,author:"RM",time:"2026-03-05 16:00",type:"comment",text:"Completed. No abnormalities found."}]},
+];
+
+/* ════════════════════════════════
+   MULTI-SELECT COMPONENT
+════════════════════════════════ */
+function MultiSelect({values=[],options=[],onChange,colorMap={},placeholder="Select…",sm=false}){
+  const [open,setOpen]=useState(false);
+  const ref=useRef();
+  useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+  return(
+    <div ref={ref} className="ms-wrap">
+      <div className={`ms-trigger${sm?" sm":""}`} onClick={()=>setOpen(s=>!s)}>
+        {values.length===0&&<span style={{color:"#9ca3af",fontSize:sm?11:12.5}}>—</span>}
+        {values.map(v=>(
+          <span key={v} className="td-tag" style={{background:colorMap[v]?colorMap[v]+"22":"#e5e7eb",color:colorMap[v]||"#374151",fontSize:11}}>{v}</span>
+        ))}
+        <span style={{marginLeft:"auto",fontSize:11,color:"#9ca3af",flexShrink:0}}>▾</span>
+      </div>
+      {open&&(
+        <div className="ms-drop">
+          {options.map(o=>{const sel=values.includes(o);return(
+            <button key={o} className={`ms-opt${sel?" sel":""}`} onClick={()=>onChange(sel?values.filter(x=>x!==o):[...values,o])}>
+              {colorMap[o]&&<span style={{width:8,height:8,borderRadius:"50%",background:colorMap[o],display:"inline-block",flexShrink:0}}/>}
+              {o}{sel&&<span style={{marginLeft:"auto"}}>✓</span>}
+            </button>
+          );})}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   INLINE TEXT EDIT
+════════════════════════════════ */
+function InlineEdit({value,onChange,disabled=false}){
+  const [ed,setEd]=useState(false);const [v,setV]=useState(value||"");
+  useEffect(()=>setV(value||""),[value]);
+  if(disabled) return <span style={{fontSize:12,color:"#374151"}}>{value||<span style={{color:"#c4c9d4"}}>—</span>}</span>;
+  if(ed) return <div style={{display:"flex",gap:4,flex:1}}><input className="td-attr-edit-input" value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{onChange(v);setEd(false);}} autoFocus onKeyDown={e=>{if(e.key==="Enter"){onChange(v);setEd(false);}if(e.key==="Escape")setEd(false);}}/></div>;
+  return <div style={{display:"flex",alignItems:"center",gap:4,flex:1}}><span style={{flex:1,fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value||<span style={{color:"#c4c9d4"}}>—</span>}</span><button className="td-attr-edit-btn" onClick={()=>setEd(true)}>✏️</button></div>;
+}
+
+/* ════════════════════════════════
+   PHOTO UPLOAD ZONE
+════════════════════════════════ */
+function PhotoUploadZone({onFiles,disabled=false}){
+  const ref=useRef();const [drag,setDrag]=useState(false);
+  const handle=files=>{
+    if(disabled||!files.length)return;
+    const ps=[...files].map(f=>new Promise(res=>{
+      const reader=new FileReader();
+      reader.onload=ev=>res({id:Date.now()+Math.random(),name:f.name,data:ev.target.result,size:fmtSize(f.size),type:f.type,uploadedAt:new Date().toLocaleString()});
+      reader.readAsDataURL(f);
+    }));
+    Promise.all(ps).then(onFiles);
+  };
+  return(
+    <div>
+      <div className={`photo-upload-zone${drag?" drag":""}`} style={disabled?{opacity:.5,cursor:"not-allowed"}:{}}
+        onClick={()=>!disabled&&ref.current?.click()}
+        onDragOver={e=>{e.preventDefault();setDrag(true);}}
+        onDragLeave={()=>setDrag(false)}
+        onDrop={e=>{e.preventDefault();setDrag(false);handle(e.dataTransfer.files);}}>
+        <div style={{fontSize:28}}>📷</div>
+        <p>{disabled?"Photo upload not available for your role":"Click to upload or drag & drop photos"}</p>
+        <p style={{fontSize:11.5}}>JPG, PNG, WEBP, GIF</p>
+      </div>
+      <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   LOGIN PAGE
+════════════════════════════════ */
+function LoginPage({users,onLogin}){
+  const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [err,setErr]=useState("");
+  const submit=e=>{
+    e.preventDefault();
+    const u=users.find(x=>x.email.toLowerCase()===email.toLowerCase()&&x.password===password&&x.status==="active");
+    if(!u){setErr("Invalid email or password. Please try again.");return;}
+    onLogin(u);
+  };
+  return(
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="login-logo-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg></div>
+          <span className="login-logo-tx" style={{fontFamily:"'Syne',sans-serif"}}>FieldWork</span>
+        </div>
+        <h1 className="login-title">Welcome back</h1>
+        <p className="login-sub">Sign in to your account to continue.</p>
+        {err&&<div className="login-err">⚠️ {err}</div>}
+        <form onSubmit={submit}>
+          <div className="fg" style={{marginBottom:14}}>
+            <label className="fl" htmlFor="le">Email address</label>
+            <input id="le" className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoFocus required/>
+          </div>
+          <div className="fg" style={{marginBottom:22}}>
+            <label className="fl" htmlFor="lp">Password</label>
+            <input id="lp" className="fi" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required/>
+          </div>
+          <button type="submit" className="btn btn-p" style={{width:"100%",justifyContent:"center",padding:"11px",fontSize:15}}>Sign In</button>
+        </form>
+        <div style={{marginTop:24,borderTop:"1px solid #f3f4f6",paddingTop:18}}>
+          <div style={{fontSize:11.5,color:"#9ca3af",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>Demo Accounts</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {users.filter(u=>u.status==="active").map(u=>(
+              <div key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#f8f9fc",borderRadius:8,cursor:"pointer"}} onClick={()=>{setEmail(u.email);setPassword(u.password);}}>
+                <div style={{width:28,height:28,borderRadius:7,background:u.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{u.initials}</div>
+                <div><div style={{fontSize:13,fontWeight:600}}>{u.name}</div><div style={{fontSize:11,color:"#9ca3af"}}>{u.email}</div></div>
+                <span className="role-badge" style={{marginLeft:"auto",background:ROLE_COLORS[u.role].bg,color:ROLE_COLORS[u.role].color}}>{ROLE_ICONS[u.role]} {u.role}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:11.5,color:"#c4c9d4",marginTop:10,textAlign:"center"}}>Click any account above to fill in credentials</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   SIDEBAR
+════════════════════════════════ */
+function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout}){
+  const navItems=[
+    {id:"plans",label:"Plans",icon:"📐",section:"field"},
+    {id:"specs",label:"Specifications",icon:"📋",section:"field"},
+    {id:"tasks",label:"Tasks",icon:"✅",section:"field"},
+    {id:"photos",label:"Photos",icon:"📷",section:"field"},
+    {id:"files",label:"Files",icon:"📁",section:"field"},
+    {id:"forms",label:"Forms",icon:"📝",section:"field"},
+    {id:"models",label:"3D Models",icon:"🔷",section:"field"},
+  ];
+  return(
+    <nav className={`fw-sb${open?"":" closed"}`} aria-label="Main navigation">
+      <div className="sb-logo">
+        <div className="sb-logo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg></div>
+        <span className="sb-logo-tx">FieldWork</span>
+      </div>
+      <div className="sb-nav">
+        <div className="sb-lbl">Field Management</div>
+        {navItems.map(n=>(
+          <button key={n.id} className={`sb-item${activeNav===n.id?" act":""}`} onClick={()=>setActiveNav(n.id)}><span>{n.icon}</span>{n.label}</button>
+        ))}
+        <div className="sb-lbl" style={{marginTop:8}}>Project Management</div>
+        <button className={`sb-item${activeNav==="my-tasks"?" act":""}`} onClick={()=>setActiveNav("my-tasks")}><span>⭐</span>My Tasks<span className="sb-badge">{counts.mine}</span></button>
+        <button className={`sb-item${activeNav==="watched"?" act":""}`} onClick={()=>setActiveNav("watched")}><span>👁️</span>Watched<span className="sb-badge">{counts.watched}</span></button>
+        <button className={`sb-item${activeNav==="all"?" act":""}`} onClick={()=>setActiveNav("all")}><span>☰</span>All Tasks<span className="sb-badge">{counts.all}</span></button>
+        {can(currentUser,"manage_db")&&(
+          <>
+            <div className="sb-lbl" style={{marginTop:8}}>Admin</div>
+            <button className={`sb-item${activeNav==="database"?" act":""}`} onClick={()=>setActiveNav("database")}><span>🗃️</span>Database</button>
+            <button className={`sb-item${activeNav==="users"?" act":""}`} onClick={()=>setActiveNav("users")}><span>👥</span>Users</button>
+          </>
+        )}
+      </div>
+      <div className="sb-foot">
+        <div className="sb-user">
+          <div className="sb-user-av" style={{background:currentUser.color}}>{currentUser.initials}</div>
+          <div className="sb-user-info"><div className="sb-user-name">{currentUser.name}</div><div className="sb-user-role">{currentUser.role}</div></div>
+          <button className="sb-logout" onClick={onLogout} title="Sign out">↩</button>
+        </div>
+        <div className="sb-fbtns">
+          <button className="sb-fb" title="Settings">⚙️</button>
+          <button className="sb-fb" title="Help">❓</button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ════════════════════════════════
+   TASK CARD
+════════════════════════════════ */
+function TaskCard({task,draggingId,onDragStart,onDragEnd,onClick,onMoveClick,currentUser,users}){
+  const late=isOverdue(task.dueDate),pri=PRI[task.priority],isDragging=draggingId===task.id;
+  const person=users.find(u=>u.id===task.assignee)||{initials:task.assignee,color:"#6b7280",name:task.assignee};
+  const canDrag=can(currentUser,"drag_task");
+  return(
+    <article className={`tc${isDragging?" dragging":""}${late?" overdue":""}`}
+      draggable={canDrag} onDragStart={canDrag?e=>onDragStart(e,task.id):undefined} onDragEnd={canDrag?onDragEnd:undefined}
+      onClick={onClick} role="button" tabIndex={0}
+      onKeyDown={e=>{if(e.key==="Enter")onClick();}}>
+      {canDrag&&<span className="tc-handle" aria-hidden="true">⠿</span>}
+      <div className="tc-id">#{task.id}</div>
+      <div className="tc-title">{task.title}</div>
+      {task.description&&<div className="tc-desc">{task.description}</div>}
+      <div className="tc-meta">
+        <span className="tc-pri" style={{color:pri.color,background:pri.bg}}>{pri.icon} {pri.label}</span>
+        {task.dueDate&&<span className={`tc-due${late?" late":""}`}>{late?"⚠️":"📅"} {fmtDate(task.dueDate)}</span>}
+        {(task.photos||[]).length>0&&<span className="tc-photos-badge">📷 {task.photos.length}</span>}
+        <span className="tc-av" style={{background:person.color}} title={person.name}>{person.initials}<span className="tc-av-tip">{person.name}</span></span>
+      </div>
+      <button className="tc-move-btn m-only" onClick={e=>{e.stopPropagation();onMoveClick(task);}}>Move to column →</button>
+    </article>
+  );
+}
+
+/* ════════════════════════════════
+   EXTENDED TASK FORM (create/edit)
+════════════════════════════════ */
+function TaskForm({mode,task,onSave,onDelete,onClose,db,users,currentUser,defaultColumn}){
+  const blankAttrs=mkAttrs();
+  const [form,setForm]=useState({
+    title:task.title||"",description:task.description||"",
+    column:task.column||defaultColumn||COLUMNS[0].id,
+    assignee:task.assignee||currentUser.id,
+    priority:task.priority||"medium",dueDate:task.dueDate||"",
+    attrs:{...blankAttrs,...(task.attrs||{})},
+    photos:task.photos||[],
+  });
+  const [errors,setErrors]=useState({});
+  const [photoLoading,setPhotoLoading]=useState(false);
+  const titleRef=useRef();
+  useEffect(()=>titleRef.current?.focus(),[]);
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const setAttr=(k,v)=>setForm(f=>({...f,attrs:{...f.attrs,[k]:v}}));
+  const submit=()=>{const e={};if(!form.title.trim())e.title="Title is required.";if(Object.keys(e).length){setErrors(e);return;}onSave(form);};
+
+  const handlePhotos=async files=>{
+    setPhotoLoading(true);
+    const withMeta=files.map(f=>({...f,uploadedBy:currentUser.id,taskId:task.id||"new"}));
+    setForm(f=>({...f,photos:[...f.photos,...withMeta]}));
+    setPhotoLoading(false);
+  };
+  const removePhoto=id=>setForm(f=>({...f,photos:f.photos.filter(p=>p.id!==id)}));
+
+  const lo=db.locations.map(l=>l.name);
+  const ro=db.rooms.map(r=>r.name);
+  const plo=db.plans.map(p=>p.name);
+  const co=db.categories.map(c=>c.name);
+  const tgo=db.tags.map(t=>t.name);
+  const tgcm=Object.fromEntries(db.tags.map(t=>[t.name,t.color]));
+  const suo=db.suppliers.map(s=>s.name);
+  const cno=db.contractors.map(c=>c.name);
+  const rco=db.reqCodes.map(r=>r.name);
+  const oso=db.originalStatuses.map(o=>o.name);
+  const peop=users.filter(u=>u.status==="active");
+  const pIdOpts=peop.map(p=>p.id);
+  const pNameMap=Object.fromEntries(peop.map(p=>[p.id,p.name]));
+  const pColMap=Object.fromEntries(peop.map(p=>[p.id,p.color]));
+
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:700}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd">
+          <h2 className="m-ht">{mode==="create"?"New Task":`Edit Task #${task.id}`}</h2>
+          <button className="btn btn-g btn-ic" onClick={onClose}>✕</button>
+        </div>
+        <div className="m-bd">
+
+          {/* BASIC */}
+          <div className="fg">
+            <label className="fl" htmlFor="ft">Title *</label>
+            <input id="ft" ref={titleRef} className="fi" value={form.title} onChange={e=>set("title",e.target.value)} placeholder="Describe the task clearly…"/>
+            {errors.title&&<span style={{color:"#ef4444",fontSize:12}}>{errors.title}</span>}
+          </div>
+          <div className="fg">
+            <label className="fl" htmlFor="fd">Description</label>
+            <textarea id="fd" className="fi" value={form.description} onChange={e=>set("description",e.target.value)} placeholder="Add more detail…"/>
+          </div>
+          <div className="fr3">
+            <div className="fg"><label className="fl" htmlFor="fcol">Status</label><select id="fcol" className="fi" value={form.column} onChange={e=>set("column",e.target.value)}>{COLUMNS.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></div>
+            <div className="fg"><label className="fl" htmlFor="fpri">Priority</label><select id="fpri" className="fi" value={form.priority} onChange={e=>set("priority",e.target.value)}><option value="high">▲ High</option><option value="medium">◆ Medium</option><option value="low">▼ Low</option></select></div>
+            <div className="fg"><label className="fl" htmlFor="fdue">Due Date</label><input id="fdue" type="date" className="fi" value={form.dueDate} onChange={e=>set("dueDate",e.target.value)}/></div>
+          </div>
+          <div className="fr2">
+            <div className="fg"><label className="fl" htmlFor="fasgn">Assignee</label><select id="fasgn" className="fi" value={form.assignee} onChange={e=>set("assignee",e.target.value)}>{peop.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            <div className="fg"><label className="fl" htmlFor="fcat">Category</label><select id="fcat" className="fi" value={form.attrs.category} onChange={e=>setAttr("category",e.target.value)}><option value="">—</option>{co.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+          </div>
+
+          {/* LOCATION */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>📍</span>Location & Plans</div>
+            <div className="fr3">
+              <div className="fg"><label className="fl" htmlFor="floc">Location</label><select id="floc" className="fi" value={form.attrs.location} onChange={e=>setAttr("location",e.target.value)}><option value="">—</option>{lo.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+              <div className="fg"><label className="fl" htmlFor="frm">Room Number</label><select id="frm" className="fi" value={form.attrs.roomNumber} onChange={e=>setAttr("roomNumber",e.target.value)}><option value="">—</option>{ro.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+              <div className="fg"><label className="fl" htmlFor="fpl">Plan</label><select id="fpl" className="fi" value={form.attrs.plan} onChange={e=>setAttr("plan",e.target.value)}><option value="">—</option>{plo.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+            </div>
+          </div>
+
+          {/* DATES */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>📅</span>Dates & Watchers</div>
+            <div className="fr3">
+              <div className="fg"><label className="fl" htmlFor="fsd">Start Date</label><input id="fsd" type="date" className="fi" value={form.attrs.startDate} onChange={e=>setAttr("startDate",e.target.value)}/></div>
+              <div className="fg"><label className="fl" htmlFor="fed">End Date</label><input id="fed" type="date" className="fi" value={form.attrs.endDate} onChange={e=>setAttr("endDate",e.target.value)}/></div>
+            </div>
+            <div className="fg" style={{marginTop:10}}>
+              <label className="fl">Watchers</label>
+              <MultiSelect values={form.attrs.watchersList} options={pIdOpts} onChange={v=>setAttr("watchersList",v)} colorMap={pColMap}/>
+            </div>
+          </div>
+
+          {/* TAGS & CLASSIFICATION */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>🏷️</span>Classification</div>
+            <div className="fr2">
+              <div className="fg"><label className="fl">Tags</label><MultiSelect values={form.attrs.tags} options={tgo} onChange={v=>setAttr("tags",v)} colorMap={tgcm}/></div>
+              <div className="fg"><label className="fl" htmlFor="fos">Original Status</label><select id="fos" className="fi" value={form.attrs.originalStatus} onChange={e=>setAttr("originalStatus",e.target.value)}><option value="">—</option>{oso.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+              <div className="fg"><label className="fl" htmlFor="fpi">Punch Item</label><select id="fpi" className="fi" value={form.attrs.punchItem} onChange={e=>setAttr("punchItem",e.target.value)}><option value="No">No</option><option value="Yes">Yes</option></select></div>
+              <div className="fg"><label className="fl" htmlFor="fop">Orig. Punch #</label><input id="fop" className="fi" value={form.attrs.originalPunchNmbr} onChange={e=>setAttr("originalPunchNmbr",e.target.value)} placeholder="P-2024-001"/></div>
+            </div>
+          </div>
+
+          {/* PROCUREMENT */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>📦</span>Procurement</div>
+            <div className="fr2">
+              <div className="fg"><label className="fl" htmlFor="fsup">Supplier</label><select id="fsup" className="fi" value={form.attrs.supplier} onChange={e=>setAttr("supplier",e.target.value)}><option value="">—</option>{suo.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+              <div className="fg"><label className="fl" htmlFor="frc">Req. Code</label><select id="frc" className="fi" value={form.attrs.reqCode} onChange={e=>setAttr("reqCode",e.target.value)}><option value="">—</option>{rco.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+              <div className="fg"><label className="fl" htmlFor="fpo">PO Description</label><input id="fpo" className="fi" value={form.attrs.poDescription} onChange={e=>setAttr("poDescription",e.target.value)} placeholder="Description of order…"/></div>
+              <div className="fg"><label className="fl" htmlFor="fctr">Resp. Contractor</label><select id="fctr" className="fi" value={form.attrs.responsibleContractor} onChange={e=>setAttr("responsibleContractor",e.target.value)}><option value="">—</option>{cno.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
+            </div>
+          </div>
+
+          {/* DOCUMENTS */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>📄</span>Documents</div>
+            <div className="fr2">
+              <div className="fg"><label className="fl" htmlFor="fcd">Commissioning Doc.</label><input id="fcd" className="fi" value={form.attrs.commissioningDoc} onChange={e=>setAttr("commissioningDoc",e.target.value)} placeholder="CD-2024-001"/></div>
+              <div className="fg"><label className="fl" htmlFor="fmc">MC Doc.</label><input id="fmc" className="fi" value={form.attrs.mcDoc} onChange={e=>setAttr("mcDoc",e.target.value)} placeholder="MC-2024-001"/></div>
+            </div>
+          </div>
+
+          {/* PHOTOS */}
+          {can(currentUser,"upload_photo")&&(
+            <div className="m-sec">
+              <div className="m-sec-title"><span>📷</span>Photos</div>
+              <PhotoUploadZone onFiles={handlePhotos} disabled={!can(currentUser,"upload_photo")}/>
+              {photoLoading&&<p style={{fontSize:12.5,color:"#9ca3af"}}>Processing images…</p>}
+              {form.photos.length>0&&(
+                <div className="photo-thumbs" style={{marginTop:8}}>
+                  {form.photos.map(p=>(
+                    <div key={p.id} className="photo-thumb-wrap">
+                      <img src={p.data} className="photo-thumb" title={p.name}/>
+                      <button className="photo-thumb-del" onClick={()=>removePhoto(p.id)}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="m-ft">
+          {onDelete&&can(currentUser,"delete_task")&&<button className="btn btn-del" style={{marginRight:"auto"}} onClick={()=>{if(window.confirm("Delete this task?"))onDelete();}}>🗑 Delete</button>}
+          <button className="btn btn-s" onClick={onClose}>Cancel</button>
+          <button className="btn btn-p" onClick={submit}>{mode==="create"?"Create Task":"Save Changes"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   TASK DETAIL PANEL
+════════════════════════════════ */
+function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentUser}){
+  const [t,setT]=useState(task);
+  const [editTitle,setEditTitle]=useState(false);const [titleVal,setTitleVal]=useState(task.title);
+  const [newCheck,setNewCheck]=useState(""); const [newMsg,setNewMsg]=useState(""); const [actOrder,setActOrder]=useState("oldest");
+  const canEdit=can(currentUser,"edit_task",t);
+  const save=useCallback(updates=>{const m={...t,...updates};setT(m);onUpdate(m);},[t,onUpdate]);
+  const saveAttr=(k,v)=>save({attrs:{...t.attrs,[k]:v}});
+  const addCheck=()=>{if(!newCheck.trim())return;save({checklist:[...(t.checklist||[]),{id:Date.now(),text:newCheck.trim(),done:false}]});setNewCheck("");};
+  const toggleCheck=id=>save({checklist:t.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)});
+  const delCheck=id=>save({checklist:t.checklist.filter(c=>c.id!==id)});
+  const addMsg=()=>{
+    if(!newMsg.trim())return;
+    const e={id:Date.now(),author:currentUser.id,time:new Date().toLocaleString(),type:"comment",text:newMsg.trim()};
+    save({activity:[...(t.activity||[]),e]});setNewMsg("");
+  };
+  const addPhotos=files=>{
+    const withMeta=files.map(f=>({...f,uploadedBy:currentUser.id,taskId:t.id}));
+    save({photos:[...(t.photos||[]),...withMeta]});
+  };
+  const delPhoto=id=>save({photos:t.photos.filter(p=>p.id!==id)});
+
+  const person=users.find(u=>u.id===t.assignee)||{initials:t.assignee,color:"#6b7280",name:t.assignee};
+  const lo=db.locations.map(l=>l.name); const ro=db.rooms.map(r=>r.name); const plo=db.plans.map(p=>p.name);
+  const co=db.categories.map(c=>c.name); const tgo=db.tags.map(tg=>tg.name);
+  const tgcm=Object.fromEntries(db.tags.map(tg=>[tg.name,tg.color]));
+  const suo=db.suppliers.map(s=>s.name); const cno=db.contractors.map(c=>c.name);
+  const rco=db.reqCodes.map(r=>r.name); const oso=db.originalStatuses.map(o=>o.name);
+  const pIdOpts=users.filter(u=>u.status==="active").map(p=>p.id);
+  const pColMap=Object.fromEntries(users.map(u=>[u.id,u.color]));
+  const completed=(t.checklist||[]).filter(c=>c.done).length, total=(t.checklist||[]).length;
+  const activity=actOrder==="oldest"?[...(t.activity||[])]:([...(t.activity||[])]).reverse();
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  const ATTRS=[
+    {label:"Status",icon:"🔄",type:"colsel",useTask:true,key:"column"},
+    {label:"Category",icon:"⊞",type:"sel",key:"category",opts:co},
+    {label:"Assignee",icon:"👤",type:"usersel",useTask:true,key:"assignee"},
+    {label:"Plan",icon:"🗺️",type:"sel",key:"plan",opts:plo},
+    {label:"Location",icon:"📍",type:"sel",key:"location",opts:lo},
+    {label:"Room Number",icon:"🚪",type:"sel",key:"roomNumber",opts:ro},
+    {label:"Start Date",icon:"📅",type:"date",key:"startDate"},
+    {label:"End Date",icon:"📅",type:"date",key:"endDate"},
+    {label:"Tags",icon:"🏷️",type:"multi",key:"tags",opts:tgo,colorMap:tgcm},
+    {label:"Watchers",icon:"👁️",type:"watchers",key:"watchersList",opts:pIdOpts,colorMap:pColMap},
+    {label:"Comm. Doc.",icon:"📄",type:"text",key:"commissioningDoc"},
+    {label:"MC Doc.",icon:"📄",type:"text",key:"mcDoc"},
+    {label:"Punch Item",icon:"⊙",type:"sel",key:"punchItem",opts:["Yes","No"]},
+    {label:"Orig. Status",icon:"⊙",type:"sel",key:"originalStatus",opts:oso},
+    {label:"Orig. Punch #",icon:"#",type:"text",key:"originalPunchNmbr"},
+    {label:"Req. Code",icon:"📎",type:"sel",key:"reqCode",opts:rco},
+    {label:"Supplier",icon:"📦",type:"sel",key:"supplier",opts:suo},
+    {label:"PO Description",icon:"📎",type:"text",key:"poDescription"},
+    {label:"Resp. Contractor",icon:"🏗️",type:"sel",key:"responsibleContractor",opts:cno},
+  ];
+
+  return(
+    <div className="td-ov" onClick={onClose}>
+      <div className="td-panel" onClick={e=>e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="td-hd">
+          <div className="td-hd-av" style={{background:person.color}}>{person.initials}</div>
+          <span className="td-hd-meta">#{t.id} | @{t.assignee}</span>
+          {!canEdit&&<span style={{marginLeft:8,fontSize:11.5,color:"#d97706",background:"#fffbeb",border:"1px solid #fde68a",padding:"2px 8px",borderRadius:6}}>👁️ View Only</span>}
+          <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+            {can(currentUser,"delete_task")&&<button className="btn btn-del" onClick={()=>{if(window.confirm("Delete?"))onDelete();}}>🗑</button>}
+            <button className="btn btn-g btn-ic" onClick={onClose}>✕</button>
+          </div>
+        </div>
+        <div className="td-body">
+          {/* LEFT */}
+          <div className="td-left">
+            <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+              {editTitle&&canEdit?(
+                <input className="td-title-input" value={titleVal} onChange={e=>setTitleVal(e.target.value)} onBlur={()=>{save({title:titleVal});setEditTitle(false);}} onKeyDown={e=>{if(e.key==="Enter"){save({title:titleVal});setEditTitle(false);}if(e.key==="Escape")setEditTitle(false);}} autoFocus/>
+              ):(
+                <><span className="td-title">{t.title}</span>{canEdit&&<button className="td-edit-btn" onClick={()=>setEditTitle(true)}>✏️</button>}</>
+              )}
+            </div>
+            {t.description&&<p style={{fontSize:13.5,color:"#7c8494",lineHeight:1.6}}>{t.description}</p>}
+
+            {/* CHECKLIST */}
+            <div className="td-section">
+              <div className="td-sec-hd">
+                <span className="td-sec-title">☑ Checklist {total>0&&<span style={{fontSize:11,color:"#9ca3af",fontWeight:500}}>({completed}/{total})</span>}</span>
+              </div>
+              {total>0&&<div style={{background:"#f3f4f6",borderRadius:8,height:4,marginBottom:4}}><div style={{background:"#16a34a",height:4,borderRadius:8,width:`${Math.round(completed/total*100)}%`,transition:"width .3s"}}/></div>}
+              {(t.checklist||[]).map(c=>(
+                <div key={c.id} className={`td-checklist-item${c.done?" done":""}`}>
+                  <input type="checkbox" className="td-cli-cb" checked={c.done} onChange={()=>canEdit&&toggleCheck(c.id)} disabled={!canEdit}/>
+                  <span className="td-cli-text">{c.text}</span>
+                  {canEdit&&<button className="td-cli-del" onClick={()=>delCheck(c.id)}>×</button>}
+                </div>
+              ))}
+              {canEdit&&<div style={{display:"flex",gap:6,marginTop:4}}><input className="fi" style={{fontSize:13}} placeholder="New checklist item…" value={newCheck} onChange={e=>setNewCheck(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addCheck();}}/><button className="btn btn-s" onClick={addCheck}>Add</button></div>}
+            </div>
+
+            {/* PHOTOS */}
+            <div className="td-section">
+              <div className="td-sec-hd"><span className="td-sec-title">📷 Photos ({(t.photos||[]).length})</span></div>
+              {can(currentUser,"upload_photo")&&<PhotoUploadZone onFiles={addPhotos} disabled={false}/>}
+              {(t.photos||[]).length>0&&(
+                <div className="photo-thumbs">
+                  {t.photos.map(p=>(
+                    <div key={p.id} className="photo-thumb-wrap">
+                      <img src={p.data} className="photo-thumb" title={p.name}
+                        onClick={()=>{const a=document.createElement("a");a.href=p.data;a.download=p.name;a.click();}}/>
+                      {can(currentUser,"delete_photo")&&<button className="photo-thumb-del" onClick={()=>delPhoto(p.id)}>×</button>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(t.photos||[]).length===0&&!can(currentUser,"upload_photo")&&<span style={{fontSize:12.5,color:"#c4c9d4"}}>No photos yet.</span>}
+            </div>
+
+            {/* ACTIVITY */}
+            <div className="td-section">
+              <div className="td-sec-hd" style={{marginBottom:6}}>
+                <span className="td-sec-title">💬 Activity</span>
+                <button style={{marginLeft:"auto",background:"none",border:"none",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Figtree',sans-serif"}} onClick={()=>setActOrder(s=>s==="oldest"?"newest":"oldest")}>{actOrder==="oldest"?"Oldest first ↑":"Newest first ↓"}</button>
+              </div>
+              <div className="td-activity">
+                {activity.length===0&&<span style={{fontSize:12.5,color:"#c4c9d4"}}>No activity yet.</span>}
+                {activity.map(a=>{const p=users.find(u=>u.id===a.author)||{initials:a.author,color:"#6b7280",name:a.author};return(
+                  <div key={a.id} className="td-act-entry">
+                    <div className="td-act-av" style={{background:p.color}}>{p.initials}</div>
+                    <div className="td-act-body">
+                      <div className="td-act-meta"><strong>{p.name}</strong> · {a.time}</div>
+                      <div className="td-act-text">{a.text}</div>
+                    </div>
+                  </div>
+                );})}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — ATTRIBUTES */}
+          <div className="td-right">
+            <div className="td-attr-hd"><span className="td-attr-title">Task Attributes</span><button style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:16}} onClick={onClose}>×</button></div>
+            <div className="td-attr-body">
+              {ATTRS.map(row=>{
+                const val=row.useTask?t[row.key]:(t.attrs||{})[row.key];
+                const onChange=v=>row.useTask?save({[row.key]:v}):saveAttr(row.key,v);
+                const disabled=!canEdit;
+                return(
+                  <div key={row.key} className="td-attr-row">
+                    <span className="td-attr-label"><span>{row.icon}</span><span style={{fontSize:11.5}}>{row.label}</span></span>
+                    <div className="td-attr-val">
+                      {(row.type==="sel"||row.type==="colsel"||row.type==="usersel")&&(
+                        <select className="td-attr-select" value={val||""} onChange={e=>onChange(e.target.value)} disabled={disabled}>
+                          <option value="">—</option>
+                          {row.type==="colsel"&&COLUMNS.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+                          {row.type==="usersel"&&users.filter(u=>u.status==="active").map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+                          {row.type==="sel"&&(row.opts||[]).map(o=><option key={o} value={o}>{o}</option>)}
+                        </select>
+                      )}
+                      {row.type==="date"&&<input type="date" className="td-attr-date" value={val||""} onChange={e=>onChange(e.target.value)} disabled={disabled}/>}
+                      {row.type==="text"&&<InlineEdit value={val} onChange={onChange} disabled={disabled}/>}
+                      {row.type==="multi"&&(disabled?<div className="td-tag-wrap">{(val||[]).map(v=><span key={v} className="td-tag" style={{background:(row.colorMap||{})[v]?row.colorMap[v]+"22":"#e5e7eb",color:(row.colorMap||{})[v]||"#374151",fontSize:11}}>{v}</span>)}{!(val||[]).length&&<span style={{color:"#c4c9d4",fontSize:12}}>—</span>}</div>:<MultiSelect values={val||[]} options={row.opts||[]} onChange={onChange} colorMap={row.colorMap||{}} sm={true}/>)}
+                      {row.type==="watchers"&&(
+                        <div>
+                          <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>
+                            {(val||[]).map(w=>{const u=users.find(x=>x.id===w)||{initials:w,color:"#6b7280",name:w};return(<span key={w} className="td-watcher-av" style={{background:u.color}} title={u.name}>{u.initials}<span className="td-watcher-tip">{u.name}</span></span>);})}
+                            {!(val||[]).length&&<span style={{color:"#c4c9d4",fontSize:12}}>—</span>}
+                          </div>
+                          {!disabled&&<MultiSelect values={val||[]} options={row.opts||[]} onChange={onChange} colorMap={row.colorMap||{}} sm={true}/>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* MESSAGE BAR */}
+        <div className="td-msg-bar">
+          <input className="td-msg-input" placeholder={can(currentUser,"add_comment")?"Enter message here…":"You don't have permission to comment."} value={newMsg} onChange={e=>setNewMsg(e.target.value)} disabled={!can(currentUser,"add_comment")} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addMsg();}}}/>
+          {can(currentUser,"add_comment")&&<button className="td-share-btn" onClick={addMsg}>Share</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   BOARD
+════════════════════════════════ */
+function BoardView({columns,tasksByColumn,draggingId,dragOverCol,mobileCol,onDragStart,onDragEnd,onDragOver,onDragLeave,onDrop,onTaskClick,onAddTask,onMoveTask,currentUser,users}){
+  const [moveTask,setMoveTask]=useState(null);
+  const [isMob,setIsMob]=useState(window.innerWidth<768);
+  useEffect(()=>{const h=()=>setIsMob(window.innerWidth<768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  return(
+    <>
+      <section className="fw-board">
+        {columns.map(col=>{
+          const tasks=tasksByColumn[col.id]||[],isOver=dragOverCol===col.id,color=COL_COLORS[col.id]||"#6b7280";
+          if(isMob&&mobileCol!==col.id)return null;
+          return(
+            <div key={col.id} className={`fw-col${isOver?" dov":""}`} style={{border:`2px solid ${isOver?color:"transparent"}`}}
+              onDragOver={e=>onDragOver(e,col.id)} onDragLeave={onDragLeave} onDrop={e=>onDrop(e,col.id)} role="list">
+              <div className="col-hd"><div className="col-dot" style={{background:color}}/><h2 className="col-title">{col.label}</h2><span className="col-cnt">{tasks.length}</span></div>
+              <div className="col-body">
+                {tasks.length===0?(<div className="col-empty"><span style={{fontSize:22,opacity:.35}}>◻</span><span className="col-empty-txt">No tasks.<br/>Add one below.</span></div>):tasks.map(t=><div key={t.id} role="listitem"><TaskCard task={t} draggingId={draggingId} onDragStart={onDragStart} onDragEnd={onDragEnd} onClick={()=>onTaskClick(t)} onMoveClick={setMoveTask} currentUser={currentUser} users={users}/></div>)}
+                <button className={`col-add${!can(currentUser,"create_task")?" disabled":""}`} onClick={()=>can(currentUser,"create_task")&&onAddTask(col.id)}>＋ Add task</button>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+      {moveTask&&(
+        <div className="modal-ov" onClick={()=>setMoveTask(null)}>
+          <div className="modal" style={{maxWidth:300}} onClick={e=>e.stopPropagation()}>
+            <div className="m-hd"><span className="m-ht">Move to…</span><button className="btn btn-g btn-ic" onClick={()=>setMoveTask(null)}>✕</button></div>
+            <div style={{padding:"10px 16px",display:"flex",flexDirection:"column",gap:3}}>
+              {columns.filter(c=>c.id!==moveTask.column).map(c=>(
+                <button key={c.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:7,border:"none",background:"none",cursor:"pointer",fontFamily:"'Figtree',sans-serif",fontSize:13,color:"#374151",textAlign:"left"}} onClick={()=>{onMoveTask(moveTask.id,c.id);setMoveTask(null);}}>
+                  <span style={{width:10,height:10,borderRadius:"50%",background:COL_COLORS[c.id],display:"inline-block"}}/>{c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ════════════════════════════════
+   LIST VIEW
+════════════════════════════════ */
+function ListView({tasks,sort,toggleSort,onTaskClick,users}){
+  const sa=f=>sort.field===f?(sort.dir==="asc"?"↑":"↓"):"";
+  return(
+    <div className="fw-list">
+      <div className="list-wrap">
+        <table className="lt">
+          <thead><tr>{[["id","ID"],["title","Title"],["priority","Priority"],["assignee","Assignee"],["column","Status"],["dueDate","Due Date"]].map(([f,l])=><th key={f} onClick={()=>toggleSort(f)} scope="col">{l}<span className="sa">{sa(f)}</span></th>)}</tr></thead>
+          <tbody>
+            {tasks.length===0&&<tr><td colSpan={6} className="lt-empty">No tasks match.</td></tr>}
+            {tasks.map(t=>{
+              const pri=PRI[t.priority],late=isOverdue(t.dueDate),col=COLUMNS.find(c=>c.id===t.column);
+              const person=users.find(u=>u.id===t.assignee)||{initials:t.assignee,color:"#6b7280",name:t.assignee};
+              return(<tr key={t.id} onClick={()=>onTaskClick(t)}>
+                <td><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,color:"#9ca3af"}}>#{t.id}</span></td>
+                <td style={{maxWidth:260}}><div style={{fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>{t.description&&<div style={{fontSize:11.5,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.description}</div>}</td>
+                <td><span className="tc-pri" style={{color:pri.color,background:pri.bg}}>{pri.icon} {pri.label}</span></td>
+                <td><span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:22,height:22,borderRadius:6,background:person.color,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{person.initials}</span>{person.name}</span></td>
+                <td><span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12.5,fontWeight:600}}><span style={{width:8,height:8,borderRadius:"50%",background:COL_COLORS[t.column]||"#ccc",display:"inline-block"}}/>{col?.label||t.column}</span></td>
+                <td><span style={{fontSize:12.5,color:late?"#ef4444":"#6b7280",fontWeight:late?700:400}}>{late&&"⚠️ "}{fmtDate(t.dueDate)||"—"}</span></td>
+              </tr>);
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   CALENDAR
+════════════════════════════════ */
+function CalendarView({tasks,calMonth,setCalMonth,onTaskClick}){
+  const year=calMonth.getFullYear(),month=calMonth.getMonth();
+  const firstDay=new Date(year,month,1).getDay(),daysInMonth=new Date(year,month+1,0).getDate(),dipsP=new Date(year,month,0).getDate();
+  const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const byDay=useMemo(()=>{const m={};tasks.forEach(t=>{if(!t.dueDate)return;const[y,mo,d]=t.dueDate.split("-").map(Number);if(y===year&&mo-1===month){if(!m[d])m[d]=[];m[d].push(t);}});return m;},[tasks,year,month]);
+  const cells=[];
+  for(let i=firstDay-1;i>=0;i--)cells.push({day:dipsP-i,cur:false});
+  for(let d=1;d<=daysInMonth;d++)cells.push({day:d,cur:true});
+  while(cells.length%7!==0)cells.push({day:cells.length-daysInMonth-firstDay+1,cur:false});
+  const now=new Date(),td=now.getDate(),tm=now.getMonth(),ty=now.getFullYear();
+  return(
+    <div className="fw-cal">
+      <div className="cal-nav"><h2 className="cal-month">{MONTHS[month]} {year}</h2><button className="btn btn-s btn-ic" onClick={()=>setCalMonth(new Date(year,month-1,1))}>‹</button><button className="btn btn-s btn-ic" onClick={()=>setCalMonth(new Date(year,month+1,1))}>›</button></div>
+      <div className="cal-grid">
+        {DAYS.map(d=><div key={d} className="cal-dh">{d}</div>)}
+        {cells.map((cell,i)=>{
+          const isToday=cell.cur&&cell.day===td&&month===tm&&year===ty;
+          const dt=cell.cur?(byDay[cell.day]||[]):[];
+          return(<div key={i} className={`cal-cell${!cell.cur?" om":""}${isToday?" today":""}`}>
+            <div className="cal-num">{cell.day}</div>
+            {dt.slice(0,3).map(t=><div key={t.id} className="cal-task" style={{background:COL_COLORS[t.column]+"22",color:COL_COLORS[t.column]||"#6b7280"}} onClick={()=>onTaskClick(t)} title={t.title}>{t.title}</div>)}
+            {dt.length>3&&<div className="cal-more">+{dt.length-3} more</div>}
+          </div>);
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   PHOTOS PAGE
+════════════════════════════════ */
+function PhotosPage({tasks,onTaskClick,currentUser}){
+  const [search,setSearch]=useState("");
+  const allPhotos=useMemo(()=>{
+    const r=[];
+    tasks.forEach(t=>(t.photos||[]).forEach(p=>r.push({...p,task:t})));
+    return r.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())||p.task.title.toLowerCase().includes(search.toLowerCase()));
+  },[tasks,search]);
+
+  const download=p=>{const a=document.createElement("a");a.href=p.data;a.download=p.name;a.click();};
+
+  return(
+    <div className="photos-page">
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,flexWrap:"wrap"}}>
+        <div><div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800}}>📷 Photos</div><div style={{fontSize:13.5,color:"#6b7280",marginTop:3}}>{allPhotos.length} photo{allPhotos.length!==1?"s":""} across all tasks</div></div>
+        <div className="tb-srch" style={{maxWidth:240,marginLeft:"auto"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search photos…"/></div>
+      </div>
+      {allPhotos.length===0&&(
+        <div style={{textAlign:"center",padding:"60px 20px",color:"#9ca3af"}}>
+          <div style={{fontSize:40,marginBottom:12}}>📷</div>
+          <div style={{fontSize:16,fontWeight:600,color:"#374151",marginBottom:6}}>{search?"No photos match your search":"No photos yet"}</div>
+          <div style={{fontSize:13.5}}>{search?"Try a different search term":"Upload photos to tasks to see them here."}</div>
+        </div>
+      )}
+      <div className="photo-grid">
+        {allPhotos.map(p=>(
+          <div key={p.id} className="photo-card">
+            <img src={p.data} alt={p.name} style={{width:"100%",height:150,objectFit:"cover",cursor:"pointer"}} onClick={()=>download(p)}/>
+            <div className="photo-card-body">
+              <div className="photo-card-name">{p.name}</div>
+              <div className="photo-card-meta">{p.size} · {p.uploadedAt}</div>
+              <div className="photo-card-task" onClick={()=>onTaskClick(p.task)}>🔗 #{p.task.id} {p.task.title}</div>
+              <div className="photo-card-actions">
+                <button className="btn btn-s" style={{fontSize:11.5,padding:"4px 10px",flex:1}} onClick={()=>download(p)}>⬇ Download</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   DATABASE PAGE
+════════════════════════════════ */
+const DB_SECTIONS=[
+  {key:"people_ref",label:"People",icon:"👤",desc:"Team members reference",virtual:true},
+  {key:"locations",label:"Locations",icon:"📍",desc:"Ship zones and work areas",cols:["name"]},
+  {key:"rooms",label:"Rooms",icon:"🚪",desc:"Room codes and compartments",cols:["name"]},
+  {key:"plans",label:"Plans",icon:"🗺️",desc:"Technical plans and drawings",cols:["name"]},
+  {key:"categories",label:"Categories",icon:"⊞",desc:"Task categories",cols:["name","color"],hasColor:true},
+  {key:"tags",label:"Tags",icon:"🏷️",desc:"Classification labels",cols:["name","color"],hasColor:true},
+  {key:"suppliers",label:"Suppliers",icon:"📦",desc:"Approved suppliers",cols:["name"]},
+  {key:"contractors",label:"Contractors",icon:"🏗️",desc:"Responsible contractors",cols:["name"]},
+  {key:"reqCodes",label:"Req. Codes",icon:"📎",desc:"Requisition codes",cols:["name"]},
+  {key:"originalStatuses",label:"Statuses",icon:"⊙",desc:"Original status options",cols:["name"]},
+  {key:"photos_ref",label:"Photos",icon:"📷",desc:"All uploaded photos",virtual:true},
+];
+
+function DatabasePage({db,setDb,tasks,onTaskClick,users}){
+  const [activeTab,setActiveTab]=useState("locations");
+  const [addF,setAddF]=useState({});const [addCol,setAddCol]=useState(COLOR_PALETTE[0]);
+  const [editId,setEditId]=useState(null);const [editF,setEditF]=useState({});
+  const importRef=useRef();
+
+  const sec=DB_SECTIONS.find(s=>s.key===activeTab);
+  const data=db[activeTab]||[];
+
+  const allPhotos=useMemo(()=>{const r=[];tasks.forEach(t=>(t.photos||[]).forEach(p=>r.push({...p,task:t})));return r;},[tasks]);
+  const download=p=>{const a=document.createElement("a");a.href=p.data;a.download=p.name;a.click();};
+
+  const handleAdd=()=>{if(!(addF.name||"").trim())return;const ni={id:Date.now(),...addF};if(sec.hasColor)ni.color=addCol;setDb(d=>({...d,[activeTab]:[...data,ni]}));setAddF({});setAddCol(COLOR_PALETTE[0]);};
+  const handleDel=id=>{if(!window.confirm("Remove?"))return;setDb(d=>({...d,[activeTab]:data.filter(x=>x.id!==id)}));};
+  const startEdit=item=>{setEditId(item.id);setEditF({...item});};
+  const saveEdit=()=>{setDb(d=>({...d,[activeTab]:data.map(x=>x.id===editId?{...editF}:x)}));setEditId(null);};
+
+  const exportSec=()=>{
+    if(sec.virtual)return;
+    const hdrs=sec.cols.concat(sec.hasColor?["color"]:[]);
+    const rows=data.map(r=>hdrs.map(h=>`"${String(r[h]||"").replace(/"/g,'""')}"`).join(","));
+    const csv=[hdrs.join(","),...rows].join("\n");
+    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    const a=document.createElement("a");a.href=url;a.download=`fieldwork-db-${activeTab}.csv`;a.click();URL.revokeObjectURL(url);
+  };
+  const handleImport=e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const lines=ev.target.result.split("\n").filter(l=>l.trim());
+      if(lines.length<2){alert("No data rows found.");return;}
+      const hdrs=lines[0].split(",").map(h=>h.replace(/^"|"$/g,"").trim());
+      const rows=lines.slice(1).map(line=>{const vals=line.split(",").map(v=>sanitize(v.replace(/^"|"$/g,"")));const o={id:Date.now()+Math.random()};hdrs.forEach((h,i)=>{o[h]=vals[i]||"";});return o;}).filter(r=>r.name);
+      if(rows.length>0){setDb(d=>({...d,[activeTab]:[...data,...rows]}));alert(`✅ Imported ${rows.length} rows.`);}
+    };
+    reader.readAsText(file);e.target.value="";
+  };
+
+  const fields=(sec.cols||[]).filter(c=>c!=="color");
+
+  return(
+    <div className="db-page">
+      <div className="db-page-hd">
+        <div><div className="db-page-title">🗃️ Database</div><div className="db-page-desc">Manage all reference data used in task attributes. Changes apply instantly.</div></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {!sec?.virtual&&<><button className="btn btn-s" onClick={exportSec}>⬇ Export {sec?.label}</button><input ref={importRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleImport}/><button className="btn btn-p" onClick={()=>importRef.current?.click()}>⬆ Import CSV</button></>}
+        </div>
+      </div>
+
+      <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",gap:12}}>
+        <span style={{fontSize:18}}>💡</span>
+        <div>
+          <div style={{fontWeight:700,fontSize:13,color:"#1d4ed8",marginBottom:2}}>How to manage data</div>
+          <div style={{fontSize:12.5,color:"#3b82f6",lineHeight:1.6}}><b>In-app:</b> Add/edit/delete rows directly. &nbsp;<b>Excel/CSV:</b> Export → edit in Excel → Import. Keep the header row. The <code>name</code> column is required.</div>
+        </div>
+      </div>
+
+      <div className="db-tabs">
+        {DB_SECTIONS.map(s=>(
+          <button key={s.key} className={`db-tab${activeTab===s.key?" act":""}`} onClick={()=>setActiveTab(s.key)}>
+            {s.icon} {s.label} <span className="db-tab-cnt">{s.virtual?(s.key==="photos_ref"?allPhotos.length:users.length):((db[s.key]||[]).length)}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* VIRTUAL: PEOPLE */}
+      {activeTab==="people_ref"&&(
+        <div className="db-card">
+          <div className="db-card-hd"><div><div className="db-card-title">👤 People — Team Members</div><div className="db-card-desc">Manage users in the Users section (Admin only).</div></div></div>
+          <table className="db-table">
+            <thead><tr><th>Avatar</th><th>Name</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>
+            <tbody>
+              {users.map(u=>(
+                <tr key={u.id}>
+                  <td><div style={{width:28,height:28,borderRadius:7,background:u.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff"}}>{u.initials}</div></td>
+                  <td style={{fontWeight:600}}>{u.name}</td>
+                  <td><span className="role-badge" style={{background:ROLE_COLORS[u.role].bg,color:ROLE_COLORS[u.role].color}}>{ROLE_ICONS[u.role]} {u.role}</span></td>
+                  <td style={{fontSize:12.5,color:"#6b7280"}}>{u.email}</td>
+                  <td><span className="status-badge" style={{background:u.status==="active"?"#dcfce7":"#fef9c3",color:u.status==="active"?"#16a34a":"#d97706"}}>● {u.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* VIRTUAL: PHOTOS */}
+      {activeTab==="photos_ref"&&(
+        <div className="db-card">
+          <div className="db-card-hd"><div><div className="db-card-title">📷 All Photos</div><div className="db-card-desc">{allPhotos.length} photo{allPhotos.length!==1?"s":""} uploaded across all tasks.</div></div></div>
+          {allPhotos.length===0&&<div className="db-empty">No photos uploaded yet. Upload photos via task detail panels.</div>}
+          <table className="db-table">
+            <thead>{allPhotos.length>0&&<tr><th>Preview</th><th>File Name</th><th>Task</th><th>Uploaded</th><th>Size</th><th>Action</th></tr>}</thead>
+            <tbody>
+              {allPhotos.map(p=>(
+                <tr key={p.id}>
+                  <td><img src={p.data} style={{width:50,height:40,objectFit:"cover",borderRadius:6,border:"1px solid #e5e7eb",cursor:"pointer"}} onClick={()=>download(p)} title="Click to download"/></td>
+                  <td style={{fontWeight:600,fontSize:13}}>{p.name}</td>
+                  <td><span style={{color:"#2563eb",fontWeight:600,cursor:"pointer",fontSize:12.5}} onClick={()=>onTaskClick(p.task)}>#{p.task.id} {p.task.title}</span></td>
+                  <td style={{fontSize:12,color:"#9ca3af"}}>{p.uploadedAt}</td>
+                  <td style={{fontSize:12,color:"#9ca3af"}}>{p.size}</td>
+                  <td><button className="btn btn-s" style={{fontSize:11.5,padding:"3px 10px"}} onClick={()=>download(p)}>⬇ Download</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* REGULAR TABLE */}
+      {!sec?.virtual&&(
+        <div className="db-card">
+          <div className="db-card-hd"><div><div className="db-card-title">{sec.icon} {sec.label}</div><div className="db-card-desc">{sec.desc}</div></div></div>
+          <table className="db-table">
+            <thead><tr>
+              {sec.hasColor&&<th style={{width:50}}>Color</th>}
+              {fields.map(f=><th key={f} style={{textTransform:"capitalize"}}>{f}</th>)}
+              <th style={{width:110}}>Actions</th>
+            </tr></thead>
+            <tbody>
+              {data.length===0&&<tr><td colSpan={fields.length+(sec.hasColor?2:1)} className="db-empty">No entries yet.</td></tr>}
+              {data.map(row=>(
+                <tr key={row.id}>
+                  {sec.hasColor&&<td>{editId===row.id?(<div className="color-swatches">{COLOR_PALETTE.map(c=><div key={c} className="db-color-swatch" style={{background:c,outline:editF.color===c?"3px solid #1a1d23":""}} onClick={()=>setEditF(f=>({...f,color:c}))}/>)}</div>):(<div style={{width:22,height:22,borderRadius:6,background:row.color||"#e5e7eb"}}/>)}</td>}
+                  {fields.map(f=><td key={f}>{editId===row.id?<input className="db-inline-edit" value={editF[f]||""} onChange={e=>setEditF(ef=>({...ef,[f]:e.target.value}))}/>:<span style={f==="name"&&row.color?{fontWeight:600,color:row.color}:{}}>{row[f]||<span style={{color:"#c4c9d4"}}>—</span>}</span>}</td>)}
+                  <td><div style={{display:"flex",gap:4}}>
+                    {editId===row.id?(<><button className="btn btn-p" style={{padding:"3px 10px",fontSize:11.5}} onClick={saveEdit}>Save</button><button className="btn btn-s" style={{padding:"3px 10px",fontSize:11.5}} onClick={()=>setEditId(null)}>Cancel</button></>):(<><button className="btn btn-g" style={{padding:"3px 8px"}} onClick={()=>startEdit(row)}>✏️</button><button className="btn btn-del" style={{padding:"3px 8px",margin:0}} onClick={()=>handleDel(row.id)}>🗑</button></>)}
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="db-add-row">
+            {sec.hasColor&&<div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}><span style={{fontSize:10.5,color:"#9ca3af",fontWeight:700,textTransform:"uppercase"}}>Color</span><div className="color-swatches">{COLOR_PALETTE.map(c=><div key={c} className="db-color-swatch" style={{background:c,outline:addCol===c?"3px solid #1a1d23":""}} onClick={()=>setAddCol(c)}/>)}</div></div>}
+            {fields.map(f=><input key={f} className="db-add-input" placeholder={f.charAt(0).toUpperCase()+f.slice(1)+"…"} value={addF[f]||""} onChange={e=>setAddF(af=>({...af,[f]:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter")handleAdd();}}/>)}
+            <button className="btn btn-p" onClick={handleAdd}>＋ Add</button>
+          </div>
+        </div>
+      )}
+
+      {!sec?.virtual&&(
+        <div style={{background:"#f8f9fc",border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 16px"}}>
+          <div style={{fontWeight:700,fontSize:12.5,color:"#374151",marginBottom:5}}>📋 CSV Template for "{sec.label}"</div>
+          <code style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"#6b7280",display:"block",background:"#eef0f6",padding:"8px 12px",borderRadius:7,lineHeight:1.8}}>
+            {sec.cols.concat(sec.hasColor?["color"]:[]).join(",")}<br/>
+            {fields.map(f=>`"Example ${f}"`).join(",")}{sec.hasColor?`,"#3b82f6"`:""}
+          </code>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   USERS PAGE (Admin only)
+════════════════════════════════ */
+function UsersPage({users,setUsers,currentUser}){
+  const [showInvite,setShowInvite]=useState(false);
+  const [editUser,setEditUser]=useState(null);
+  const [newCreds,setNewCreds]=useState(null);
+
+  const handleCreate=form=>{
+    const nu={id:form.initials.toUpperCase(),initials:form.initials.toUpperCase(),name:form.name,email:form.email,password:form.password,color:form.color,role:form.role,status:"invited",joinedAt:new Date().toISOString().split("T")[0]};
+    setUsers(u=>[...u,nu]);
+    setNewCreds({...nu});
+    setShowInvite(false);
+  };
+  const handleEdit=form=>{setUsers(u=>u.map(x=>x.id===editUser.id?{...x,...form}:x));setEditUser(null);};
+  const handleDeactivate=id=>{if(!window.confirm("Deactivate this user?"))return;setUsers(u=>u.map(x=>x.id===id?{...x,status:x.status==="active"?"inactive":"active"}:x));};
+  const handleDelete=id=>{if(!window.confirm("Permanently delete this user?"))return;setUsers(u=>u.filter(x=>x.id!==id));};
+
+  return(
+    <div className="users-page">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div><div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800}}>👥 Users</div><div style={{fontSize:13.5,color:"#6b7280",marginTop:3}}>Manage team access, roles and permissions.</div></div>
+        <button className="btn btn-p" onClick={()=>setShowInvite(true)}>＋ Invite User</button>
+      </div>
+
+      {/* Role guide */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:10,marginBottom:20}}>
+        {[
+          {role:"admin",icon:"👑",title:"Admin",desc:"Full access. Manage users, database, all tasks, all settings."},
+          {role:"engineer",icon:"🔧",title:"Engineer",desc:"View all tasks. Edit and close tasks assigned to them. Add comments and photos."},
+          {role:"viewer",icon:"👁️",title:"Viewer",desc:"Read-only access. Cannot edit, create or delete anything."},
+        ].map(r=>(
+          <div key={r.role} style={{background:"#fff",borderRadius:12,padding:"14px 16px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:`3px solid ${ROLE_COLORS[r.role].color}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{fontSize:18}}>{r.icon}</span>
+              <span style={{fontWeight:700,fontSize:14}}>{r.title}</span>
+              <span className="role-badge" style={{background:ROLE_COLORS[r.role].bg,color:ROLE_COLORS[r.role].color,marginLeft:"auto"}}>{r.role}</span>
+            </div>
+            <p style={{fontSize:12.5,color:"#6b7280",lineHeight:1.5}}>{r.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {users.map(u=>(
+        <div key={u.id} className="user-card">
+          <div className="user-av-lg" style={{background:u.color}}>{u.initials}</div>
+          <div className="user-info">
+            <div className="user-name">{u.name}{u.id===currentUser.id&&<span style={{marginLeft:8,fontSize:11,background:"#dbeafe",color:"#2563eb",padding:"1px 7px",borderRadius:10,fontWeight:600}}>You</span>}</div>
+            <div className="user-email">{u.email}</div>
+            <div className="user-meta">
+              <span className="role-badge" style={{background:ROLE_COLORS[u.role].bg,color:ROLE_COLORS[u.role].color}}>{ROLE_ICONS[u.role]} {u.role}</span>
+              <span className="status-badge" style={{background:u.status==="active"?"#dcfce7":u.status==="invited"?"#fef9c3":"#f3f4f6",color:u.status==="active"?"#16a34a":u.status==="invited"?"#d97706":"#9ca3af"}}>● {u.status}</span>
+              <span style={{fontSize:11.5,color:"#c4c9d4"}}>Joined {fmtDate(u.joinedAt)}</span>
+            </div>
+          </div>
+          {u.id!==currentUser.id&&(
+            <div className="user-actions">
+              <button className="btn btn-s" style={{fontSize:12}} onClick={()=>setEditUser(u)}>✏️ Edit</button>
+              <button className="btn btn-warn" style={{fontSize:12}} onClick={()=>handleDeactivate(u.id)}>{u.status==="active"?"Deactivate":"Activate"}</button>
+              <button className="btn btn-del" style={{fontSize:12}} onClick={()=>handleDelete(u.id)}>🗑</button>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {showInvite&&<UserFormModal title="Invite New User" onSave={handleCreate} onClose={()=>setShowInvite(false)}/>}
+      {editUser&&<UserFormModal title={`Edit — ${editUser.name}`} initial={editUser} onSave={handleEdit} onClose={()=>setEditUser(null)}/>}
+
+      {newCreds&&(
+        <div className="modal-ov" onClick={()=>setNewCreds(null)}>
+          <div className="modal" style={{maxWidth:420}} onClick={e=>e.stopPropagation()}>
+            <div className="m-hd"><h2 className="m-ht">✅ User Created</h2><button className="btn btn-g btn-ic" onClick={()=>setNewCreds(null)}>✕</button></div>
+            <div className="m-bd">
+              <p style={{fontSize:13.5,color:"#6b7280"}}>Share these credentials with <strong>{newCreds.name}</strong> so they can sign in:</p>
+              <div className="invite-creds">
+                <div className="invite-creds-title">Login Credentials</div>
+                {[["Name",newCreds.name],["Email",newCreds.email],["Password",newCreds.password],["Role",newCreds.role]].map(([l,v])=>(
+                  <div key={l} className="invite-creds-row"><span className="invite-creds-label">{l}</span><span className="invite-creds-val">{v}</span></div>
+                ))}
+              </div>
+              <p style={{fontSize:12,color:"#9ca3af"}}>⚠️ The password should be changed by the user on first login. Keep these credentials secure.</p>
+            </div>
+            <div className="m-ft"><button className="btn btn-p" onClick={()=>setNewCreds(null)}>Done</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserFormModal({title,initial={},onSave,onClose}){
+  const [f,setF]=useState({name:initial.name||"",initials:initial.initials||"",email:initial.email||"",password:initial.password||"",role:initial.role||"engineer",color:initial.color||COLOR_PALETTE[3]});
+  const [err,setErr]=useState({});
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  const submit=()=>{
+    const e={};
+    if(!f.name.trim())e.name="Name required.";
+    if(!f.email.trim())e.email="Email required.";
+    if(!f.password.trim())e.password="Password required.";
+    if(!f.initials.trim())e.initials="Initials required.";
+    if(Object.keys(e).length){setErr(e);return;}
+    onSave(f);
+  };
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:480}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd"><h2 className="m-ht">{title}</h2><button className="btn btn-g btn-ic" onClick={onClose}>✕</button></div>
+        <div className="m-bd">
+          <div className="fr2">
+            <div className="fg"><label className="fl">Full Name *</label><input className="fi" value={f.name} onChange={e=>set("name",e.target.value)} placeholder="Jane Doe"/>{err.name&&<span style={{color:"#ef4444",fontSize:12}}>{err.name}</span>}</div>
+            <div className="fg"><label className="fl">Initials *</label><input className="fi" value={f.initials} onChange={e=>set("initials",e.target.value.toUpperCase().slice(0,3))} placeholder="JD" maxLength={3}/>{err.initials&&<span style={{color:"#ef4444",fontSize:12}}>{err.initials}</span>}</div>
+          </div>
+          <div className="fg"><label className="fl">Email *</label><input className="fi" type="email" value={f.email} onChange={e=>set("email",e.target.value)} placeholder="jane@company.com"/>{err.email&&<span style={{color:"#ef4444",fontSize:12}}>{err.email}</span>}</div>
+          <div className="fg"><label className="fl">Password *</label><input className="fi" value={f.password} onChange={e=>set("password",e.target.value)} placeholder="Set initial password"/>{err.password&&<span style={{color:"#ef4444",fontSize:12}}>{err.password}</span>}</div>
+          <div className="fr2">
+            <div className="fg"><label className="fl">Role</label><select className="fi" value={f.role} onChange={e=>set("role",e.target.value)}><option value="admin">👑 Admin</option><option value="engineer">🔧 Engineer</option><option value="viewer">👁️ Viewer</option></select></div>
+            <div className="fg"><label className="fl">Avatar Color</label><div className="color-swatches" style={{marginTop:4}}>{COLOR_PALETTE.map(c=><div key={c} className="db-color-swatch" style={{background:c,width:28,height:28,outline:f.color===c?"3px solid #1a1d23":""}} onClick={()=>set("color",c)}/>)}</div></div>
+          </div>
+          <div style={{background:"#f8f9fc",borderRadius:10,padding:"12px 14px",border:"1px solid #e5e7eb"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:6}}>Preview</div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:38,height:38,borderRadius:10,background:f.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#fff"}}>{f.initials||"?"}</div>
+              <div><div style={{fontWeight:700,fontSize:14}}>{f.name||"Full Name"}</div><div style={{fontSize:12,color:"#9ca3af"}}>{f.email||"email@company.com"}</div></div>
+              <span className="role-badge" style={{marginLeft:"auto",background:ROLE_COLORS[f.role].bg,color:ROLE_COLORS[f.role].color}}>{ROLE_ICONS[f.role]} {f.role}</span>
+            </div>
+          </div>
+        </div>
+        <div className="m-ft"><button className="btn btn-s" onClick={onClose}>Cancel</button><button className="btn btn-p" onClick={submit}>Save User</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   FILTER PANEL
+════════════════════════════════ */
+function FilterPanel({filters,addFilter,removeFilter,clearFilters,onClose,columns,users}){
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+  const opt=(group,val,label,color)=>(
+    <button key={val} className={`fp-opt${filters[group]===val?" sel":""}`} onClick={()=>filters[group]===val?removeFilter(group):addFilter(group,val)}>
+      {color&&<span style={{width:10,height:10,borderRadius:"50%",background:color,display:"inline-block",flexShrink:0}}/>}{label}{filters[group]===val&&<span style={{marginLeft:"auto"}}>✓</span>}
+    </button>
+  );
+  return(
+    <>
+      <div className="fp-ov" onClick={onClose}/>
+      <aside className="fp">
+        <div className="fp-hd"><h2 className="fp-ht">Filters</h2><button className="btn btn-g btn-ic" onClick={onClose}>✕</button></div>
+        <div className="fp-bd">
+          <div><div className="fp-sl">Priority</div>{["high","medium","low"].map(v=>opt("priority",v,`${PRI[v].icon} ${PRI[v].label}`,PRI[v].color))}</div>
+          <div><div className="fp-sl">Assignee</div>{users.filter(u=>u.status==="active").map(p=>opt("assignee",p.id,p.name,p.color))}</div>
+          <div><div className="fp-sl">Status</div>{columns.map(c=>opt("column",c.id,c.label,COL_COLORS[c.id]))}</div>
+          <div><div className="fp-sl">Due Date</div>{opt("overdue","true","⚠️ Overdue only")}</div>
+        </div>
+        <div className="fp-ft"><button className="btn btn-s" style={{flex:1}} onClick={clearFilters}>Clear all</button><button className="btn btn-p" style={{flex:1}} onClick={onClose}>Apply</button></div>
+      </aside>
+    </>
+  );
+}
+
+/* ════════════════════════════════
+   MAIN APP
+════════════════════════════════ */
+/* ── localStorage persistence ── */
+const LS={tasks:"fw_tasks",users:"fw_users",db:"fw_db",nextId:"fw_nextId"};
+const lsGet=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn("localStorage unavailable",e);}};
+
+function App(){
+  useEffect(()=>{const s=lsGet(LS.nextId,null);if(s&&s>_nextId)_nextId=s;},[]);
+
+  const [currentUser,setCurrentUser]=useState(null);
+  const [users,setUsers]=useState(()=>lsGet(LS.users,INIT_USERS));
+  const [tasks,setTasks]=useState(()=>lsGet(LS.tasks,SEED_TASKS));
+  const [db,setDb]=useState(()=>lsGet(LS.db,INIT_DB));
+  const [view,setView]=useState("board");
+  const [sidebarOpen,setSidebarOpen]=useState(true);
+  const [activeNav,setActiveNav]=useState("my-tasks");
+  const [filters,setFilters]=useState({});
+  const [sort,setSort]=useState({field:"id",dir:"asc"});
+  const [search,setSearch]=useState("");
+  const [showSortMenu,setShowSortMenu]=useState(false);
+  const [showFilterPanel,setShowFilterPanel]=useState(false);
+  const [showEmptyColumns,setShowEmptyColumns]=useState(true);
+  const [taskModal,setTaskModal]=useState(null);
+  const [detailTask,setDetailTask]=useState(null);
+  const [undoStack,setUndoStack]=useState([]);
+  const [undoToast,setUndoToast]=useState(null);
+  const [draggingId,setDraggingId]=useState(null);
+  const [dragOverCol,setDragOverCol]=useState(null);
+  const [mobileCol,setMobileCol]=useState("due-today");
+  const [calMonth,setCalMonth]=useState(new Date());
+  const [saveFlash,setSaveFlash]=useState(false);
+  const sortMenuRef=useRef();
+  const undoTimerRef=useRef();
+  const importRef=useRef();
+  const saveTimer=useRef();
+
+  /* Auto-save tasks/users/db to localStorage */
+  const flash=useCallback(()=>{if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{setSaveFlash(true);setTimeout(()=>setSaveFlash(false),1800);},500);},[]);
+  useEffect(()=>{lsSet(LS.tasks,tasks);lsSet(LS.nextId,_nextId);flash();},[tasks]);
+  useEffect(()=>{lsSet(LS.users,users);},[users]);
+  useEffect(()=>{lsSet(LS.db,db);},[db]);
+
+  /* Full data reset (admin only) */
+  const handleReset=()=>{
+    if(!window.confirm("Reset ALL data to demo state?\nThis deletes all tasks, users and database changes.")) return;
+    [LS.tasks,LS.users,LS.db,LS.nextId].forEach(k=>localStorage.removeItem(k));
+    _nextId=1065; setTasks(SEED_TASKS); setUsers(INIT_USERS); setDb(INIT_DB); setCurrentUser(null);
+  };
+
+  useEffect(()=>{const check=()=>{if(window.innerWidth<768)setSidebarOpen(false);else setSidebarOpen(true);};check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
+  useEffect(()=>{const h=e=>{if(sortMenuRef.current&&!sortMenuRef.current.contains(e.target))setShowSortMenu(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+
+  const filteredTasks=useMemo(()=>{
+    let res=[...tasks];
+    if(activeNav==="my-tasks")res=res.filter(t=>t.assignee===currentUser?.id);
+    else if(activeNav==="watched")res=res.filter(t=>(t.watchers||[]).includes(currentUser?.id));
+    if(search){const q=search.toLowerCase();res=res.filter(t=>t.title.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q)||String(t.id).includes(q));}
+    if(filters.assignee)res=res.filter(t=>t.assignee===filters.assignee);
+    if(filters.priority)res=res.filter(t=>t.priority===filters.priority);
+    if(filters.column)res=res.filter(t=>t.column===filters.column);
+    if(filters.overdue)res=res.filter(t=>isOverdue(t.dueDate));
+    res.sort((a,b)=>{let av,bv;switch(sort.field){case"id":av=a.id;bv=b.id;break;case"title":av=a.title;bv=b.title;break;case"dueDate":av=a.dueDate||"9999";bv=b.dueDate||"9999";break;case"priority":{const p={high:0,medium:1,low:2};av=p[a.priority];bv=p[b.priority];break;}default:av=a.assignee;bv=b.assignee;}return sort.dir==="asc"?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);});
+    return res;
+  },[tasks,activeNav,search,filters,sort,currentUser]);
+
+  const tasksByColumn=useMemo(()=>{const m={};COLUMNS.forEach(c=>{m[c.id]=[]});filteredTasks.forEach(t=>{if(m[t.column])m[t.column].push(t)});return m;},[filteredTasks]);
+  const visibleColumns=useMemo(()=>showEmptyColumns?COLUMNS:COLUMNS.filter(c=>(tasksByColumn[c.id]?.length||0)>0),[showEmptyColumns,tasksByColumn]);
+  const counts=useMemo(()=>({mine:tasks.filter(t=>t.assignee===currentUser?.id).length,watched:tasks.filter(t=>(t.watchers||[]).includes(currentUser?.id)).length,all:tasks.length}),[tasks,currentUser]);
+  const activeFilterCount=Object.keys(filters).length+(search?1:0);
+  const SORT_OPTIONS=[{field:"id",label:"Task ID"},{field:"title",label:"Title"},{field:"dueDate",label:"Due Date"},{field:"priority",label:"Priority"},{field:"assignee",label:"Assignee"}];
+  const sortLabel=SORT_OPTIONS.find(o=>o.field===sort.field)?.label||"Sort";
+
+  const createTask=useCallback(data=>{
+    const nt={...data,id:genId(),createdAt:TODAY,watchers:[],photos:data.photos||[],checklist:[],relatedTasks:[],activity:[]};
+    setTasks(p=>[...p,nt]);setTaskModal(null);
+  },[]);
+  const updateTask=useCallback(updated=>{setTasks(p=>p.map(t=>t.id===updated.id?updated:t));if(detailTask?.id===updated.id)setDetailTask(updated);},[detailTask]);
+  const deleteTask=useCallback(id=>{setTasks(p=>p.filter(t=>t.id!==id));setTaskModal(null);setDetailTask(null);},[]);
+
+  const moveTask=useCallback((taskId,toColumn)=>{
+    let fromColumn;
+    setTasks(prev=>{const task=prev.find(t=>t.id===taskId);fromColumn=task?.column;if(fromColumn===toColumn)return prev;return prev.map(t=>t.id===taskId?{...t,column:toColumn}:t);});
+    if(!fromColumn||fromColumn===toColumn)return;
+    setUndoStack(p=>[...p,{taskId,fromColumn,toColumn}]);
+    const label=COLUMNS.find(c=>c.id===toColumn)?.label||toColumn;
+    if(undoTimerRef.current)clearTimeout(undoTimerRef.current);
+    setUndoToast(label);
+    undoTimerRef.current=setTimeout(()=>setUndoToast(null),5000);
+  },[]);
+  const undoMove=useCallback(()=>{setUndoStack(p=>{if(!p.length)return p;const last=p[p.length-1];setTasks(ts=>ts.map(t=>t.id===last.taskId?{...t,column:last.fromColumn}:t));clearTimeout(undoTimerRef.current);setUndoToast(null);return p.slice(0,-1);});},[]);
+
+  const handleDragStart=useCallback((e,id)=>{if(!can(currentUser,"drag_task"))return;setDraggingId(id);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(id));},[currentUser]);
+  const handleDragEnd=useCallback(()=>{setDraggingId(null);setDragOverCol(null);},[]);
+  const handleDragOver=useCallback((e,colId)=>{e.preventDefault();e.dataTransfer.dropEffect="move";setDragOverCol(colId);},[]);
+  const handleDragLeave=useCallback(()=>setDragOverCol(null),[]);
+  const handleDrop=useCallback((e,colId)=>{e.preventDefault();const id=parseInt(e.dataTransfer.getData("text/plain"));if(id&&can(currentUser,"drag_task"))moveTask(id,colId);setDraggingId(null);setDragOverCol(null);},[moveTask,currentUser]);
+
+  const addFilter=(k,v)=>setFilters(f=>({...f,[k]:v}));
+  const removeFilter=k=>setFilters(f=>{const n={...f};delete n[k];return n;});
+  const clearFilters=()=>setFilters({});
+  const toggleSort=field=>{setSort(s=>s.field===field?{field,dir:s.dir==="asc"?"desc":"asc"}:{field,dir:"asc"});setShowSortMenu(false);};
+
+  const handleExport=()=>{
+    const hdrs=["id","title","description","column","assignee","priority","dueDate"];
+    const rows=filteredTasks.map(t=>hdrs.map(h=>`"${String(t[h]||"").replace(/"/g,'""')}"`).join(","));
+    const csv=[hdrs.join(","),...rows].join("\n");
+    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    const a=document.createElement("a");a.href=url;a.download="fieldwork-tasks.csv";a.click();URL.revokeObjectURL(url);
+  };
+
+  const handleImportTasks=e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const lines=ev.target.result.split("\n").filter(Boolean);
+      const headers=lines[0].split(",").map(h=>sanitize(h.replace(/^"|"$/g,"")));
+      const imported=lines.slice(1).map(line=>{const vals=line.split(",").map(v=>sanitize(v.replace(/^"|"$/g,"")));const o={};headers.forEach((h,i)=>{o[h]=vals[i]||""});return{id:genId(),title:o.title||"Imported",description:o.description||"",column:COLUMNS.find(c=>c.id===o.column||c.label===o.column)?.id||"cat-a",assignee:users.find(u=>u.id===o.assignee)?o.assignee:currentUser.id,priority:["high","medium","low"].includes(o.priority)?o.priority:"medium",dueDate:o.dueDate||"",createdAt:TODAY,watchers:[],photos:[],attrs:mkAttrs(),checklist:[],relatedTasks:[],activity:[]};}).filter(t=>t.title);
+      if(imported.length>0){setTasks(p=>[...p,...imported]);alert(`✅ Imported ${imported.length} tasks`);}
+    };
+    reader.readAsText(file);e.target.value="";
+  };
+
+  const filterChipLabel=(k,v)=>{if(k==="assignee"){const p=users.find(x=>x.id===v);return`Assignee: ${p?.name||v}`;}if(k==="priority")return`Priority: ${PRI[v]?.label||v}`;if(k==="column")return`Status: ${COLUMNS.find(c=>c.id===v)?.label||v}`;if(k==="overdue")return"Overdue only";return`${k}: ${v}`;};
+
+  const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
+  const isSpecialPage=["database","users","photos"].includes(activeNav);
+
+  if(!currentUser) return <LoginPage users={users} onLogin={u=>setCurrentUser({...u,status:"active"})}/>;
+
+  return(
+    <>
+      <div className="fw-app">
+        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>setCurrentUser(null)}/>
+        <main className="fw-main">
+          {/* TOP BAR */}
+          <header className="fw-tb">
+            <div className="tb-l">
+              <button className="hmbgr" onClick={()=>setSidebarOpen(s=>!s)} aria-label="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+              <nav className="bc">
+                <span>Business Plan</span><span className="bc-s">›</span>
+                <span>{isSpecialPage?"Settings":"Tasks"}</span><span className="bc-s">›</span>
+                <span className="bc-c">{NAV_LABELS[activeNav]||activeNav}</span>
+              </nav>
+            </div>
+            {!isSpecialPage&&<div className="tb-l d-only" style={{maxWidth:220}}><div className="tb-srch" role="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search tasks…" type="search"/></div></div>}
+            <div className="tb-r">
+              {!isSpecialPage&&can(currentUser,"create_task")&&<button className="btn btn-p" onClick={()=>setTaskModal({mode:"create",task:{},defaultColumn:COLUMNS[0].id})}>＋ <span className="d-only">New Task</span></button>}
+              {!isSpecialPage&&<>
+                <div style={{position:"relative"}} ref={sortMenuRef}>
+                  <button className="btn btn-s" onClick={()=>setShowSortMenu(s=>!s)}>↕ <span className="d-only">{sortLabel} {sort.dir==="asc"?"↑":"↓"}</span></button>
+                  {showSortMenu&&<div className="sort-menu">{SORT_OPTIONS.map(o=><div key={o.field} className={`so${sort.field===o.field?" act":""}`} onClick={()=>toggleSort(o.field)} tabIndex={0} onKeyDown={e=>{if(e.key==="Enter")toggleSort(o.field);}}>{o.label}{sort.field===o.field&&<span>{sort.dir==="asc"?"↑":"↓"}</span>}</div>)}</div>}
+                </div>
+                <button className="btn btn-s" onClick={()=>setShowFilterPanel(true)}>⊞ <span className="d-only">Filters</span>{activeFilterCount>0&&<span className="fbadge">{activeFilterCount}</span>}</button>
+                <div className="vt d-only">{[["board","⊞ Board"],["list","≡ List"],["calendar","📅 Cal"]].map(([v,l])=><button key={v} className={`vt-b${view===v?" act":""}`} onClick={()=>setView(v)}>{l}</button>)}</div>
+                {view==="board"&&<button className="btn btn-g d-only" onClick={()=>setShowEmptyColumns(s=>!s)} title={showEmptyColumns?"Hide empty":"Show empty"}>{showEmptyColumns?"⊡":"⊞"}</button>}
+                {can(currentUser,"create_task")&&<><input ref={importRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleImportTasks}/><button className="btn btn-g btn-ic d-only" onClick={()=>importRef.current?.click()} title="Import tasks CSV">⬆</button></>}
+                <button className="btn btn-g btn-ic d-only" onClick={handleExport} title="Export CSV">⬇</button>
+              </>}
+              {saveFlash&&<span className="save-flash d-only">✓ Saved</span>}
+              {can(currentUser,"manage_db")&&<button className="btn btn-g btn-ic d-only" onClick={handleReset} title="Reset all data to demo state" style={{color:"#ef4444"}}>↺</button>}
+              <div className="u-av" style={{background:currentUser.color}} title={`${currentUser.name} — ${currentUser.role}`}>{currentUser.initials}</div>
+            </div>
+          </header>
+
+          {/* SPECIAL PAGES */}
+          {activeNav==="database"&&(can(currentUser,"manage_db")?<DatabasePage db={db} setDb={setDb} tasks={tasks} onTaskClick={setDetailTask} users={users}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>Database management is available to Admins only.</p></div>)}
+          {activeNav==="users"&&(can(currentUser,"manage_users")?<UsersPage users={users} setUsers={setUsers} currentUser={currentUser}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>User management is available to Admins only.</p></div>)}
+          {activeNav==="photos"&&<PhotosPage tasks={tasks} onTaskClick={setDetailTask} currentUser={currentUser}/>}
+
+          {/* TASK PAGES */}
+          {!isSpecialPage&&<>
+            <div className="fw-legend d-only">
+              <span className="leg-title">Legend:</span>
+              {COLUMNS.map(c=><span key={c.id} className="leg-item"><span className="leg-dot" style={{background:COL_COLORS[c.id]}}/>{c.label}</span>)}
+              <span className="leg-item" style={{marginLeft:6}}><span style={{width:3,height:14,background:"#ef4444",borderRadius:2,display:"inline-block",marginRight:3}}/>Overdue</span>
+            </div>
+            <div className="fw-fb">
+              <div className="tb-srch m-only" style={{flex:1,maxWidth:"100%",marginRight:4}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…" type="search"/></div>
+              {Object.entries(filters).map(([k,v])=><span key={k} className="f-chip">{filterChipLabel(k,v)}<button className="f-chip-x" onClick={()=>removeFilter(k)}>×</button></span>)}
+              {search&&<span className="f-chip">"{search}"<button className="f-chip-x" onClick={()=>setSearch("")}>×</button></span>}
+              {activeFilterCount>1&&<button className="clear-all" onClick={()=>{clearFilters();setSearch("");}}>Clear all</button>}
+              <span className="stat-info">{filteredTasks.length}/{tasks.length} tasks</span>
+            </div>
+            {view==="board"&&<div className="mob-cs m-only">{visibleColumns.map(col=>{const cnt=tasksByColumn[col.id]?.length||0,color=COL_COLORS[col.id]||"#6b7280",active=mobileCol===col.id;return<button key={col.id} className="mob-pill" onClick={()=>setMobileCol(col.id)} style={{borderColor:color,background:active?color:"#fff",color:active?"#fff":color}}>{col.label} ({cnt})</button>;})}</div>}
+            <div className="m-only" style={{display:"flex",gap:6,padding:"8px 12px",background:"#fff",borderBottom:"1px solid #eaecf0",flexShrink:0}}>
+              {[["board","⊞","Board"],["list","≡","List"],["calendar","📅","Cal"]].map(([v,ic,lbl])=><button key={v} className={`btn${view===v?" btn-p":" btn-s"}`} style={{flex:1,justifyContent:"center"}} onClick={()=>setView(v)}>{ic} {lbl}</button>)}
+            </div>
+            {view==="board"&&<BoardView columns={visibleColumns} tasksByColumn={tasksByColumn} draggingId={draggingId} dragOverCol={dragOverCol} mobileCol={mobileCol} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onTaskClick={setDetailTask} onAddTask={colId=>can(currentUser,"create_task")&&setTaskModal({mode:"create",task:{},defaultColumn:colId})} onMoveTask={moveTask} currentUser={currentUser} users={users}/>}
+            {view==="list"&&<ListView tasks={filteredTasks} sort={sort} toggleSort={toggleSort} onTaskClick={setDetailTask} users={users}/>}
+            {view==="calendar"&&<CalendarView tasks={filteredTasks} calMonth={calMonth} setCalMonth={setCalMonth} onTaskClick={setDetailTask}/>}
+          </>}
+        </main>
+      </div>
+
+      {/* TASK DETAIL PANEL */}
+      {detailTask&&<TaskDetailPanel task={detailTask} onClose={()=>setDetailTask(null)} onUpdate={updateTask} onDelete={()=>deleteTask(detailTask.id)} tasks={tasks} db={db} users={users} currentUser={currentUser}/>}
+
+      {/* TASK FORM MODAL */}
+      {taskModal&&<TaskForm mode={taskModal.mode} task={taskModal.task} onSave={createTask} onDelete={null} onClose={()=>setTaskModal(null)} db={db} users={users} currentUser={currentUser} defaultColumn={taskModal.defaultColumn}/>}
+
+      {/* UNDO TOAST */}
+      {undoToast&&<div className="fw-toast"><span>Moved to <strong>{undoToast}</strong></span><button className="undo-b" onClick={undoMove}>Undo</button><button className="undo-b" style={{background:"none",opacity:.6}} onClick={()=>setUndoToast(null)}>✕</button></div>}
+
+      {/* FILTER PANEL */}
+      {showFilterPanel&&<FilterPanel filters={filters} addFilter={addFilter} removeFilter={removeFilter} clearFilters={clearFilters} onClose={()=>setShowFilterPanel(false)} columns={COLUMNS} users={users}/>}
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
