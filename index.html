@@ -13,9 +13,9 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='4' y='4' width='10' height='10' rx='2' fill='white'/><rect x='18' y='4' width='10' height='10' rx='2' fill='white'/><rect x='4' y='18' width='10' height='10' rx='2' fill='white'/><line x1='18' y1='23' x2='28' y2='23' stroke='white' stroke-width='2.5' stroke-linecap='round'/><line x1='23' y1='18' x2='23' y2='28' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<!-- Firebase SDK (compat version - works with global firebase object) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase SDK compat v10 -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -544,14 +544,11 @@ let _firestore = null;
 const getFS = () => _firestore;
 
 const initFirebase = (cfg) => {
-  try {
-    // Clear existing apps to allow re-init
-    if (firebase.apps && firebase.apps.length > 0) {
-      firebase.apps.forEach(app => { try { app.delete(); } catch(e){} });
-    }
-  } catch(e) {}
-  const app = firebase.initializeApp(cfg);
-  _firestore = firebase.firestore(app);
+  if (_firestore) return _firestore; // already initialized
+  if (!firebase.apps.length) {
+    firebase.initializeApp(cfg);
+  }
+  _firestore = firebase.firestore();
   return _firestore;
 };
 
@@ -858,6 +855,54 @@ function LoadingScreen({msg="Loading data…"}) {
       <div className="loading-msg">{msg}</div>
     </div>
   );
+}
+
+
+/* ════════════════════════════════════════════════════
+   ERROR BOUNDARY — catches render crashes (white screen)
+════════════════════════════════════════════════════ */
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, info: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    this.setState({ info });
+    console.error('FieldWork render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{minHeight:'100vh',background:'#0e1118',display:'flex',alignItems:'center',justifyContent:'center',padding:20,fontFamily:"'Figtree',sans-serif"}}>
+          <div style={{background:'#fff',borderRadius:16,padding:'32px 36px',maxWidth:520,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,.4)'}}>
+            <div style={{fontSize:32,marginBottom:12}}>⚠️</div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,marginBottom:8,color:'#1a1d23'}}>Something went wrong</div>
+            <div style={{fontSize:13.5,color:'#6b7280',marginBottom:16,lineHeight:1.6}}>
+              FieldWork encountered an unexpected error. This is usually caused by a browser compatibility issue or a failed Firebase connection.
+            </div>
+            <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'10px 14px',fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:'#ef4444',marginBottom:20,wordBreak:'break-word'}}>
+              {this.state.error?.message||'Unknown error'}
+            </div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              <button onClick={()=>window.location.reload()} style={{background:'#2563eb',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',cursor:'pointer',fontSize:13,fontWeight:600,fontFamily:"'Figtree',sans-serif"}}>
+                🔄 Reload Page
+              </button>
+              <button onClick={()=>{localStorage.clear();window.location.reload();}} style={{background:'#f3f4f6',color:'#374151',border:'1px solid #e5e7eb',borderRadius:8,padding:'9px 18px',cursor:'pointer',fontSize:13,fontWeight:600,fontFamily:"'Figtree',sans-serif"}}>
+                🗑 Clear Cache & Reload
+              </button>
+            </div>
+            <div style={{marginTop:14,fontSize:11.5,color:'#9ca3af'}}>
+              Open browser DevTools (F12) → Console tab for detailed error information.
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function LoginPage({users,onLogin}){
@@ -1685,7 +1730,7 @@ function ProfileModal({currentUser, users, onUpdateUser, onClose}){
 
   useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
 
-  const submit=()=>{
+  const submit=async()=>{
     const e={};
     if(!f.name.trim()) e.name="Name is required.";
     if(!f.email.trim()) e.email="Email is required.";
@@ -2424,14 +2469,17 @@ function App(){
     catch(e){setSyncErr('Firebase init failed: '+e.message);setDataLoading(false);return;}
 
     let loaded={t:false,u:false,d:false,p:false};
-    const chk=()=>{if(loaded.t&&loaded.u&&loaded.d&&loaded.p){setDataLoading(false);flash();}};
+    const chk=()=>{if(loaded.t&&loaded.u&&loaded.d&&loaded.p){clearTimeout(timeout);setDataLoading(false);flash();}};
+    /* Timeout: if Firestore doesn't respond in 15s, unblock the UI */
+    const timeout=setTimeout(()=>{setDataLoading(false);if(!loaded.u)setSyncErr('Connection timed out. Check Firebase config and Firestore rules.');},15000);
+    const origChk=chk;
 
     /* Tasks */
     const u1=fs.collection('tasks').onSnapshot(snap=>{
       setTasks(snap.docs.map(d=>d.data()));
       lsSet(LS_NEXTID,_nextId);
       if(!loaded.t){loaded.t=true;chk();}else flash();
-    },e=>setSyncErr('Tasks: '+e.message));
+    },e=>{setSyncErr('Tasks: '+e.message);if(!loaded.t){loaded.t=true;chk();}});
 
     /* Users — seed INIT_USERS on first run */
     const u2=fs.collection('users').onSnapshot(snap=>{
@@ -2453,14 +2501,14 @@ function App(){
         });
       }
       if(!loaded.u){loaded.u=true;chk();}
-    },e=>setSyncErr('Users: '+e.message));
+    },e=>{setSyncErr('Users: '+e.message);if(!loaded.u){loaded.u=true;chk();}});
 
     /* Reference DB — seed INIT_DB on first run */
     const u3=fs.doc('db/main').onSnapshot(snap=>{
       if(!snap.exists){fs.doc('db/main').set(INIT_DB).catch(console.error);setDb(INIT_DB);}
       else setDb(snap.data());
       if(!loaded.d){loaded.d=true;chk();}
-    },e=>setSyncErr('DB: '+e.message));
+    },e=>{setSyncErr('DB: '+e.message);if(!loaded.d){loaded.d=true;chk();}});
 
     /* Photos */
     const u4=fs.collection('photos').onSnapshot(snap=>{
@@ -2624,6 +2672,29 @@ function App(){
   };
 
 
+  /* ════════════════════════════════
+     DERIVED / COMPUTED STATE
+  ════════════════════════════════ */
+  const filteredTasks=useMemo(()=>{
+    let res=[...tasks];
+    if(activeNav==="my-tasks")res=res.filter(t=>t.assignee===currentUser?.id);
+    else if(activeNav==="watched")res=res.filter(t=>(t.watchers||[]).includes(currentUser?.id));
+    if(search){const q=search.toLowerCase();res=res.filter(t=>t.title.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q)||String(t.id).includes(q));}
+    if(filters.assignee)res=res.filter(t=>t.assignee===filters.assignee);
+    if(filters.priority)res=res.filter(t=>t.priority===filters.priority);
+    if(filters.column)res=res.filter(t=>t.column===filters.column);
+    if(filters.overdue)res=res.filter(t=>isOverdue(t.dueDate));
+    res.sort((a,b)=>{let av,bv;switch(sort.field){case"id":av=a.id;bv=b.id;break;case"title":av=a.title;bv=b.title;break;case"dueDate":av=a.dueDate||"9999";bv=b.dueDate||"9999";break;case"priority":{const p={high:0,medium:1,low:2};av=p[a.priority];bv=p[b.priority];break;}default:av=a.assignee;bv=b.assignee;}return sort.dir==="asc"?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);});
+    return res;
+  },[tasks,activeNav,search,filters,sort,currentUser]);
+
+  const tasksByColumn=useMemo(()=>{const m={};COLUMNS.forEach(c=>{m[c.id]=[]});filteredTasks.forEach(t=>{if(m[t.column])m[t.column].push(t)});return m;},[filteredTasks]);
+  const visibleColumns=useMemo(()=>showEmptyColumns?COLUMNS:COLUMNS.filter(c=>(tasksByColumn[c.id]?.length||0)>0),[showEmptyColumns,tasksByColumn]);
+  const counts=useMemo(()=>({mine:tasks.filter(t=>t.assignee===currentUser?.id).length,watched:tasks.filter(t=>(t.watchers||[]).includes(currentUser?.id)).length,all:tasks.length}),[tasks,currentUser]);
+  const activeFilterCount=Object.keys(filters).length+(search?1:0);
+  const SORT_OPTIONS=[{field:"id",label:"Task ID"},{field:"title",label:"Title"},{field:"dueDate",label:"Due Date"},{field:"priority",label:"Priority"},{field:"assignee",label:"Assignee"}];
+  const sortLabel=SORT_OPTIONS.find(o=>o.field===sort.field)?.label||"Sort";
+
   const handleDragStart=useCallback((e,id)=>{if(!can(currentUser,"drag_task"))return;setDraggingId(id);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(id));},[currentUser]);
   const handleDragEnd=useCallback(()=>{setDraggingId(null);setDragOverCol(null);},[]);
   const handleDragOver=useCallback((e,colId)=>{e.preventDefault();e.dataTransfer.dropEffect="move";setDragOverCol(colId);},[]);
@@ -2777,7 +2848,7 @@ function App(){
     </>
   );
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 </body>
 </html>
