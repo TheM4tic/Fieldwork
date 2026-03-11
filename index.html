@@ -2375,7 +2375,14 @@ const LS_NEXTID='fw_nextId';
 
 function App(){
   /* ── Firebase / config state ── */
-  const [fbConfig,setFbConfig]=useState(()=>lsGet(LS_FB_CONFIG,null));
+  const [fbConfig,setFbConfig]=useState({
+    apiKey: "AIzaSyBdIwDF35xFVIxEHy91jgnVlzeMPJWMl3s",
+    authDomain: "fieldwork-8d09c.firebaseapp.com",
+    projectId: "fieldwork-8d09c",
+    storageBucket: "fieldwork-8d09c.firebasestorage.app",
+    messagingSenderId: "920897576762",
+    appId: "1:920897576762:web:7b0650b7bc76bd2478ba03"
+  });
   const [fbReady,setFbReady]=useState(false);
   const [dataLoading,setDataLoading]=useState(true);
   const [syncErr,setSyncErr]=useState('');
