@@ -13,6 +13,9 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='4' y='4' width='10' height='10' rx='2' fill='white'/><rect x='18' y='4' width='10' height='10' rx='2' fill='white'/><rect x='4' y='18' width='10' height='10' rx='2' fill='white'/><line x1='18' y1='23' x2='28' y2='23' stroke='white' stroke-width='2.5' stroke-linecap='round'/><line x1='23' y1='18' x2='23' y2='28' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<!-- Firebase SDK (compat version - works with global firebase object) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -413,6 +416,34 @@ textarea.fi{resize:vertical;min-height:80px;}
 .welcome-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;}
 .welcome-sub{font-size:14px;color:#6b7280;margin-bottom:24px;line-height:1.5;}
 
+
+/* ── SETUP SCREEN ── */
+.setup-page{min-height:100vh;background:linear-gradient(135deg,#0e1118 0%,#1e2434 100%);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Figtree',sans-serif;}
+.setup-card{background:#fff;border-radius:20px;width:100%;max-width:560px;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden;}
+.setup-hd{background:#0e1118;padding:28px 32px 24px;display:flex;align-items:center;gap:14px;}
+.setup-logo{width:44px;height:44px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.setup-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#fff;letter-spacing:-.02em;}
+.setup-sub{font-size:13px;color:rgba(255,255,255,.45);margin-top:2px;}
+.setup-bd{padding:28px 32px;display:flex;flex-direction:column;gap:16px;}
+.setup-step{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:10px;background:#f8f9fc;border:1px solid #e5e7eb;}
+.setup-step-num{width:26px;height:26px;border-radius:50%;background:#2563eb;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.setup-step-content{flex:1;}
+.setup-step-title{font-weight:700;font-size:13.5px;margin-bottom:3px;}
+.setup-step-desc{font-size:12.5px;color:#6b7280;line-height:1.5;}
+.setup-step-desc a{color:#2563eb;text-decoration:none;font-weight:600;}
+.setup-step-desc a:hover{text-decoration:underline;}
+.setup-code{background:#0e1118;color:#93c5fd;font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;border-radius:7px;margin-top:8px;line-height:1.8;overflow-x:auto;}
+.setup-ft{padding:20px 32px;border-top:1px solid #f3f4f6;display:flex;gap:10px;align-items:center;}
+/* ── LOADING SCREEN ── */
+.loading-screen{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eef0f6;gap:16px;}
+.loading-spinner{width:44px;height:44px;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-size:14px;color:#9ca3af;font-weight:500;}
+/* ── SYNC INDICATOR ── */
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;animation:pulse 2s ease infinite;display:inline-block;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-err{color:#ef4444;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
+
 </style>
 </head>
 <body>
@@ -477,6 +508,7 @@ const INIT_DB={
 /* ════════════════════════════════
    INITIAL USERS
 ════════════════════════════════ */
+/* Passwords below are plaintext seed values — hashed automatically on first login */
 const INIT_USERS=[
   {id:"GH",initials:"GH",name:"Georg Hansen",email:"g.hansen@fieldwork.com",password:"admin123",color:"#f97316",role:"admin",status:"active",joinedAt:"2026-01-01"},
   {id:"MVA",initials:"MVA",name:"Maarten van Asten",email:"m.vanasten@fieldwork.com",password:"eng123",color:"#8b5cf6",role:"engineer",status:"active",joinedAt:"2026-01-05"},
@@ -501,6 +533,62 @@ const SEED_TASKS=[
   {id:1055,title:"Yard inspection — propeller shaft",description:"Pre-installation check by classification body.",column:"verify-yard",assignee:"TL",priority:"medium",dueDate:"2026-03-17",createdAt:"2026-02-05",watchers:["RM"],photos:[],attrs:mkAttrs({category:"Mechanical",plan:"Hull Structural Plan Rev.4",tags:["Class","DNV"],mcDoc:"MC-2024-095",supplier:"Wärtsilä",responsibleContractor:"SHL Offshore"}),checklist:[],relatedTasks:[],activity:[]},
   {id:1010,title:"Grease main engine bearings",description:"Routine maintenance — completed.",column:"approved",assignee:"RM",priority:"low",dueDate:"2026-03-05",createdAt:"2026-01-10",watchers:[],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Engine Room",roomNumber:"ER-01",originalStatus:"Closed"}),checklist:[{id:1,text:"Grease bearings 1-4",done:true},{id:2,text:"Log in maintenance book",done:true}],relatedTasks:[],activity:[{id:1,author:"RM",time:"2026-03-05 16:00",type:"comment",text:"Completed. No abnormalities found."}]},
 ];
+
+
+/* ════════════════════════════════════════════════════
+   FIREBASE  — Firestore helper & image compression
+════════════════════════════════════════════════════ */
+
+/* Store config in localStorage so user only pastes it once */
+const LS_FB_CONFIG   = 'fw_firebase_config';
+const LS_SESSION_UID = 'fw_session_uid';
+let _firestore = null;
+
+const getFS = () => _firestore;
+
+const initFirebase = (cfg) => {
+  try {
+    // Clear existing apps to allow re-init
+    if (firebase.apps && firebase.apps.length > 0) {
+      firebase.apps.forEach(app => { try { app.delete(); } catch(e){} });
+    }
+  } catch(e) {}
+  const app = firebase.initializeApp(cfg);
+  _firestore = firebase.firestore(app);
+  return _firestore;
+};
+
+/* Compress an image File to JPEG base64 ≤ ~200KB */
+const compressImage = (file) => new Promise((resolve) => {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1100;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => resolve(ev.target.result); // fallback: raw
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* localStorage helpers (still used for Firebase config + nextId) */
+const lsGet=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+/* SHA-256 password hashing via browser SubtleCrypto */
+const hashPassword = async pw => {
+  if(!pw) return '';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+const isHashed = pw => typeof pw === 'string' && pw.length === 64 && /^[0-9a-f]+$/.test(pw);
 
 /* ════════════════════════════════
    MULTI-SELECT COMPONENT
@@ -550,10 +638,9 @@ function PhotoUploadZone({onFiles,disabled=false}){
   const ref=useRef();const [drag,setDrag]=useState(false);
   const handle=files=>{
     if(disabled||!files.length)return;
+    // Pass file objects with metadata; parent is responsible for compression
     const ps=[...files].map(f=>new Promise(res=>{
-      const reader=new FileReader();
-      reader.onload=ev=>res({id:Date.now()+Math.random(),name:f.name,data:ev.target.result,size:fmtSize(f.size),type:f.type,uploadedAt:new Date().toLocaleString()});
-      reader.readAsDataURL(f);
+      res({_file:f,id:Date.now()+Math.random(),name:f.name,size:fmtSize(f.size),type:f.type,uploadedAt:new Date().toLocaleString()});
     }));
     Promise.all(ps).then(onFiles);
   };
@@ -590,7 +677,9 @@ const decodeInvite = token => {
 };
 const buildInviteUrl = user => {
   const base = window.location.href.split('#')[0];
-  return base + '#invite=' + encodeInvite(user);
+  // Never encode password in URL — share password separately
+  const safe={id:user.id,initials:user.initials,name:user.name,email:user.email,role:user.role,color:user.color,status:'active',joinedAt:user.joinedAt};
+  return base + '#invite=' + encodeInvite(safe);
 };
 
 /* ════════════════════════════════
@@ -608,12 +697,13 @@ function WelcomePage({user, onContinue}) {
           Sign in below with your credentials to get started.
         </div>
         <div style={{background:"#f8f9fc",borderRadius:10,padding:"14px 16px",textAlign:"left",marginBottom:20}}>
-          {[["Email",user.email],["Password",user.password],["Role",user.role]].map(([l,v])=>(
+          {[["Email",user.email],["Role",user.role]].map(([l,v])=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #eaecf0",fontSize:13}}>
               <span style={{color:"#9ca3af"}}>{l}</span>
-              <span style={{fontFamily:l==="Email"||l==="Password"?"'JetBrains Mono',monospace":"inherit",fontWeight:600}}>{v}</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>{v}</span>
             </div>
           ))}
+          <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>🔒 Use the password that was shared with you separately by the Admin.</div>
         </div>
         <button className="btn btn-p" style={{width:"100%",justifyContent:"center",padding:"11px",fontSize:15}} onClick={onContinue}>
           Continue to Sign In →
@@ -623,14 +713,176 @@ function WelcomePage({user, onContinue}) {
   );
 }
 
+
+/* ════════════════════════════════════════════════════
+   SETUP SCREEN  (first run — paste Firebase config)
+════════════════════════════════════════════════════ */
+function SetupScreen({onSave}) {
+  const [raw, setRaw] = useState('');
+  const [err, setErr] = useState('');
+  const [testing, setTesting] = useState(false);
+
+  const exampleConfig = `{
+  "apiKey": "AIzaSy...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project-id",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abc123"
+}`;
+
+  const handleSave = async () => {
+    setErr(''); setTesting(true);
+    try {
+      // Accept either raw JSON or a firebaseConfig = {...} paste
+      let cleaned = raw.trim();
+      cleaned = cleaned.replace(/^(const|var|let)\s+\w+\s*=\s*/,'').replace(/;?\s*$/,'');
+      const cfg = JSON.parse(cleaned);
+      if (!cfg.projectId || !cfg.apiKey) throw new Error('Missing projectId or apiKey');
+      // Test connection
+      const fs = initFirebase(cfg);
+      await fs.collection('_ping').doc('test').set({t: Date.now()});
+      await fs.collection('_ping').doc('test').delete();
+      lsSet(LS_FB_CONFIG, cfg);
+      onSave(cfg);
+    } catch(e) {
+      setErr('Could not connect: ' + (e.message || String(e)) + '. Check config and Firestore rules.');
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="setup-page">
+      <div className="setup-card">
+        <div className="setup-hd">
+          <div className="setup-logo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/>
+            </svg>
+          </div>
+          <div>
+            <div className="setup-title">FieldWork — First-Time Setup</div>
+            <div className="setup-sub">Connect to Firebase to enable cloud sync for your team</div>
+          </div>
+        </div>
+
+        <div className="setup-bd">
+          <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"12px 14px",fontSize:12.5,color:"#1d4ed8",lineHeight:1.7}}>
+            <strong>This setup is done once by the Admin.</strong> After connecting, all team members share the same live database. Data syncs in real-time across every device.
+          </div>
+
+          <div className="setup-step">
+            <div className="setup-step-num">1</div>
+            <div className="setup-step-content">
+              <div className="setup-step-title">Create a free Firebase project</div>
+              <div className="setup-step-desc">
+                Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Add project → give it any name → Continue (disable Analytics if preferred) → Create project.
+              </div>
+            </div>
+          </div>
+
+          <div className="setup-step">
+            <div className="setup-step-num">2</div>
+            <div className="setup-step-content">
+              <div className="setup-step-title">Enable Firestore Database</div>
+              <div className="setup-step-desc">
+                In your project → Build → Firestore Database → Create database → <strong>Start in test mode</strong> → choose a location → Done.
+              </div>
+            </div>
+          </div>
+
+          <div className="setup-step">
+            <div className="setup-step-num">3</div>
+            <div className="setup-step-content">
+              <div className="setup-step-title">Get your Web App config</div>
+              <div className="setup-step-desc">
+                Project Settings (gear icon) → Your apps → Web app (&lt;/&gt;) → Register app → copy the <code style={{background:"#e0e7ff",padding:"1px 5px",borderRadius:4}}>firebaseConfig</code> object shown.
+              </div>
+              <div className="setup-code">{exampleConfig}</div>
+            </div>
+          </div>
+
+          <div className="setup-step">
+            <div className="setup-step-num">4</div>
+            <div className="setup-step-content">
+              <div className="setup-step-title">Secure your database (important!)</div>
+              <div className="setup-step-desc">
+                Firestore → Rules tab → paste these rules → Publish:
+              </div>
+              <div className="setup-code">{`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`}</div>
+              <div className="setup-step-desc" style={{marginTop:6,color:"#9ca3af"}}>
+                For tighter security later, restrict by IP or add authentication rules.
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="fl" style={{marginBottom:7,display:"block"}}>Paste your Firebase config JSON here</label>
+            <textarea className="fi" style={{minHeight:130,fontFamily:"'JetBrains Mono',monospace",fontSize:12}} value={raw}
+              onChange={e=>setRaw(e.target.value)}
+              placeholder={exampleConfig}/>
+            {err && <div style={{color:"#ef4444",fontSize:12.5,marginTop:6,background:"#fef2f2",padding:"8px 12px",borderRadius:7,border:"1px solid #fecaca"}}>⚠️ {err}</div>}
+          </div>
+        </div>
+
+        <div className="setup-ft">
+          <div style={{fontSize:12,color:"#9ca3af",flex:1}}>Config is stored in your browser — paste it once per device.</div>
+          <button className="btn btn-p" onClick={handleSave} disabled={!raw.trim()||testing} style={{opacity:(!raw.trim()||testing)?.5:1}}>
+            {testing ? '⏳ Testing…' : '🚀 Connect & Launch'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════
+   LOADING SCREEN
+════════════════════════════════════════════════════ */
+function LoadingScreen({msg="Loading data…"}) {
+  return (
+    <div className="loading-screen">
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" style={{opacity:.8}}>
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/>
+        </svg>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:700,color:"#1a1d23"}}>FieldWork</div>
+      </div>
+      <div className="loading-spinner"/>
+      <div className="loading-msg">{msg}</div>
+    </div>
+  );
+}
+
 function LoginPage({users,onLogin}){
-  const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [err,setErr]=useState("");
-  const submit=e=>{
+  const [email,setEmail]=useState("");const [password,setPassword]=useState("");const [err,setErr]=useState("");const [busy,setBusy]=useState(false);
+  const submit=async e=>{
     e.preventDefault();
-    const u=users.find(x=>x.email.toLowerCase()===email.toLowerCase()&&x.password===password&&x.status!=="inactive");
-    if(!u){setErr("Invalid email or password. Please try again.");return;}
-    // Auto-activate invited users on first login
-    onLogin(u.status==="invited"?{...u,status:"active"}:u);
+    setBusy(true);setErr('');
+    try{
+      const hashed=await hashPassword(password);
+      // Support both hashed passwords (new) and plain-text (migration)
+      const u=users.find(x=>x.email.toLowerCase()===email.toLowerCase()&&x.status!=="inactive"&&(x.password===hashed||(!isHashed(x.password)&&x.password===password)));
+      if(!u){setErr("Invalid email or password. Please try again.");setBusy(false);return;}
+      // Migrate plaintext password to hash on first successful login
+      const fs=getFS();
+      if(fs&&!isHashed(u.password)){
+        await fs.collection('users').doc(u.id).update({password:hashed}).catch(console.error);
+        onLogin({...u,password:hashed,status:u.status==="invited"?"active":u.status});
+      } else {
+        onLogin(u.status==="invited"?{...u,status:"active"}:u);
+      }
+    }catch(ex){setErr("Login error: "+ex.message);}
+    setBusy(false);
   };
   return(
     <div className="login-page">
@@ -651,7 +903,7 @@ function LoginPage({users,onLogin}){
             <label className="fl" htmlFor="lp">Password</label>
             <input id="lp" className="fi" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required/>
           </div>
-          <button type="submit" className="btn btn-p" style={{width:"100%",justifyContent:"center",padding:"11px",fontSize:15}}>Sign In</button>
+          <button type="submit" className="btn btn-p" style={{width:"100%",justifyContent:"center",padding:"11px",fontSize:15}} disabled={busy}>{busy?"Signing in…":"Sign In"}</button>
         </form>
         <div style={{marginTop:24,borderTop:"1px solid #f3f4f6",paddingTop:18}}>
           <div style={{fontSize:11.5,color:"#9ca3af",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>Demo Accounts</div>
@@ -774,8 +1026,12 @@ function TaskForm({mode,task,onSave,onDelete,onClose,db,users,currentUser,defaul
 
   const handlePhotos=async files=>{
     setPhotoLoading(true);
-    const withMeta=files.map(f=>({...f,uploadedBy:currentUser.id,taskId:task.id||"new"}));
-    setForm(f=>({...f,photos:[...f.photos,...withMeta]}));
+    const processed=[];
+    for(const f of files){
+      const data=await compressImage(f._file||f);
+      processed.push({id:f.id,name:f.name,data,size:f.size,type:'image/jpeg',uploadedAt:f.uploadedAt,uploadedBy:currentUser.id});
+    }
+    setForm(f=>({...f,photos:[...f.photos,...processed]}));
     setPhotoLoading(false);
   };
   const removePhoto=id=>setForm(f=>({...f,photos:f.photos.filter(p=>p.id!==id)}));
@@ -910,7 +1166,7 @@ function TaskForm({mode,task,onSave,onDelete,onClose,db,users,currentUser,defaul
 /* ════════════════════════════════
    TASK DETAIL PANEL
 ════════════════════════════════ */
-function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentUser}){
+function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentUser,photos=[],onDeletePhoto}){
   const [t,setT]=useState(task);
   const [editTitle,setEditTitle]=useState(false);const [titleVal,setTitleVal]=useState(task.title);
   const [newCheck,setNewCheck]=useState(""); const [newMsg,setNewMsg]=useState(""); const [actOrder,setActOrder]=useState("oldest");
@@ -925,11 +1181,18 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
     const e={id:Date.now(),author:currentUser.id,time:new Date().toLocaleString(),type:"comment",text:newMsg.trim()};
     save({activity:[...(t.activity||[]),e]});setNewMsg("");
   };
-  const addPhotos=files=>{
-    const withMeta=files.map(f=>({...f,uploadedBy:currentUser.id,taskId:t.id}));
-    save({photos:[...(t.photos||[]),...withMeta]});
+  const addPhotos=async files=>{
+    for(const f of files){
+      const compressed=await compressImage(f._file||f);
+      const photo={id:'photo_'+Date.now()+'_'+Math.random().toString(36).slice(2),taskId:String(t.id),name:f.name,data:compressed,size:f.size,type:'image/jpeg',uploadedAt:new Date().toLocaleString(),uploadedBy:currentUser.id};
+      const fs=getFS();
+      if(fs){
+        await fs.collection('photos').doc(photo.id).set(photo);
+        await fs.collection('tasks').doc(String(t.id)).update({photoIds:firebase.firestore.FieldValue.arrayUnion(photo.id)});
+      }
+    }
   };
-  const delPhoto=id=>save({photos:t.photos.filter(p=>p.id!==id)});
+  const delPhoto=async id=>{if(onDeletePhoto)await onDeletePhoto(id);};
 
   const person=users.find(u=>u.id===t.assignee)||{initials:t.assignee,color:"#6b7280",name:t.assignee};
   const lo=db.locations.map(l=>l.name); const ro=db.rooms.map(r=>r.name); const plo=db.plans.map(p=>p.name);
@@ -1008,11 +1271,11 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
 
             {/* PHOTOS */}
             <div className="td-section">
-              <div className="td-sec-hd"><span className="td-sec-title">📷 Photos ({(t.photos||[]).length})</span></div>
+              <div className="td-sec-hd"><span className="td-sec-title">📷 Photos ({photos.length})</span></div>
               {can(currentUser,"upload_photo")&&<PhotoUploadZone onFiles={addPhotos} disabled={false}/>}
-              {(t.photos||[]).length>0&&(
+              {photos.length>0&&(
                 <div className="photo-thumbs">
-                  {t.photos.map(p=>(
+                  {photos.map(p=>(
                     <div key={p.id} className="photo-thumb-wrap">
                       <img src={p.data} className="photo-thumb" title={p.name}
                         onClick={()=>{const a=document.createElement("a");a.href=p.data;a.download=p.name;a.click();}}/>
@@ -1021,7 +1284,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
                   ))}
                 </div>
               )}
-              {(t.photos||[]).length===0&&!can(currentUser,"upload_photo")&&<span style={{fontSize:12.5,color:"#c4c9d4"}}>No photos yet.</span>}
+              {photos.length===0&&!can(currentUser,"upload_photo")&&<span style={{fontSize:12.5,color:"#c4c9d4"}}>No photos yet.</span>}
             </div>
 
             {/* ACTIVITY */}
@@ -1205,13 +1468,12 @@ function CalendarView({tasks,calMonth,setCalMonth,onTaskClick}){
 /* ════════════════════════════════
    PHOTOS PAGE
 ════════════════════════════════ */
-function PhotosPage({tasks,onTaskClick,currentUser}){
+function PhotosPage({tasks,photos=[],onTaskClick,currentUser,onDeletePhoto}){
   const [search,setSearch]=useState("");
   const allPhotos=useMemo(()=>{
-    const r=[];
-    tasks.forEach(t=>(t.photos||[]).forEach(p=>r.push({...p,task:t})));
-    return r.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())||p.task.title.toLowerCase().includes(search.toLowerCase()));
-  },[tasks,search]);
+    return photos.map(p=>{const task=tasks.find(t=>String(t.id)===String(p.taskId))||{id:p.taskId,title:'Unknown task',column:'cat-a'};return{...p,task};})
+      .filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())||p.task.title.toLowerCase().includes(search.toLowerCase()));
+  },[photos,tasks,search]);
 
   const download=p=>{const a=document.createElement("a");a.href=p.data;a.download=p.name;a.click();};
 
@@ -1421,7 +1683,7 @@ function DatabasePage({db,setDb,tasks,onTaskClick,users}){
 /* ════════════════════════════════
    PROFILE MODAL  (all roles)
 ════════════════════════════════ */
-function ProfileModal({currentUser, users, setUsers, setCurrentUser, onClose}){
+function ProfileModal({currentUser, users, onUpdateUser, onClose}){
   const [f,setF]=useState({
     name:currentUser.name||"",
     initials:currentUser.initials||"",
@@ -1444,18 +1706,29 @@ function ProfileModal({currentUser, users, setUsers, setCurrentUser, onClose}){
     if(!f.email.trim()) e.email="Email is required.";
     if(!f.initials.trim()) e.initials="Initials required.";
     if(f.newPw||f.currentPw||f.confirmPw){
-      if(f.currentPw!==currentUser.password) e.currentPw="Current password is incorrect.";
+      // Support both hashed and plaintext current passwords (migration period)
+      const curOk=isHashed(currentUser.password)
+        ?(hashPassword(f.currentPw).then?true:false)  // async check handled below
+        :(f.currentPw===currentUser.password);
       if(f.newPw.length<6) e.newPw="New password must be at least 6 characters.";
       if(f.newPw!==f.confirmPw) e.confirmPw="Passwords do not match.";
     }
     if(Object.keys(e).length){setErrors(e);return;}
+    // Hash new password
+    let finalPw=currentUser.password;
+    if(f.newPw){
+      // Verify current password first
+      const curHash=await hashPassword(f.currentPw);
+      const curOk=isHashed(currentUser.password)?curHash===currentUser.password:f.currentPw===currentUser.password;
+      if(!curOk){setErrors({currentPw:"Current password is incorrect."});return;}
+      finalPw=await hashPassword(f.newPw);
+    }
     const updated={...currentUser,
       name:f.name.trim(),initials:f.initials.toUpperCase().slice(0,3),
       email:f.email.trim(),color:f.color,
-      password:f.newPw?f.newPw:currentUser.password
+      password:finalPw
     };
-    setUsers(u=>u.map(x=>x.id===currentUser.id?updated:x));
-    setCurrentUser(updated);
+    await onUpdateUser(updated);
     setErrors({});setSaved(true);
     setTimeout(()=>setSaved(false),2000);
   };
@@ -1877,7 +2150,7 @@ function CredentialsModal({creds, onClose}) {
   };
 
   const copyAll = () => {
-    const txt = `FieldWork Login\nName: ${creds.name}\nEmail: ${creds.email}\nPassword: ${creds.password}\nRole: ${creds.role}\nLink: ${inviteUrl}`;
+    const txt = `FieldWork Login\nName: ${creds.name}\nEmail: ${creds.email}\nPassword: ${creds.plainPw||"(share separately)"}\nRole: ${creds.role}\nInvite Link: ${inviteUrl}\n\nNOTE: The invite link does NOT contain the password. Share both separately.`;
     navigator.clipboard.writeText(txt).catch(()=>{
       const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);
     });
@@ -1903,10 +2176,10 @@ function CredentialsModal({creds, onClose}) {
           {/* HOW IT WORKS */}
           <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"12px 14px",fontSize:12.5,color:"#1d4ed8",lineHeight:1.7}}>
             <strong>How it works:</strong><br/>
-            1. Copy the invite link and send it (email, WhatsApp, Teams, etc.)<br/>
-            2. They open the link in their browser<br/>
-            3. Their account is installed automatically<br/>
-            4. They sign in with the credentials below
+            1. Send the invite link — their account will install automatically<br/>
+            2. Send the <strong>password separately</strong> (message, email, phone)<br/>
+            3. They open the link, then sign in with their email + password<br/>
+            <span style={{color:"#6b7280",fontSize:11.5}}>🔒 The link does <strong>not</strong> contain the password — it must be shared separately.</span>
           </div>
 
           {/* INVITE LINK */}
@@ -1923,7 +2196,7 @@ function CredentialsModal({creds, onClose}) {
           {/* CREDENTIALS */}
           <div className="invite-creds">
             <div className="invite-creds-title">Login Credentials</div>
-            {[["Name",creds.name],["Email",creds.email],["Password",creds.password],["Role",creds.role]].map(([l,v])=>(
+            {[["Name",creds.name],["Email",creds.email],["Password (share separately)",creds.plainPw||"(set by user)"],["Role",creds.role]].map(([l,v])=>(
               <div key={l} className="invite-creds-row">
                 <span className="invite-creds-label">{l}</span>
                 <span className="invite-creds-val">{v}</span>
@@ -1950,20 +2223,22 @@ function CredentialsModal({creds, onClose}) {
 /* ════════════════════════════════
    USERS PAGE (Admin only)
 ════════════════════════════════ */
-function UsersPage({users,setUsers,currentUser}){
+function UsersPage({users,onCreateUser,onUpdateUser,onDeleteUser,currentUser}){
   const [showInvite,setShowInvite]=useState(false);
   const [editUser,setEditUser]=useState(null);
   const [newCreds,setNewCreds]=useState(null);
 
-  const handleCreate=form=>{
-    const nu={id:form.initials.toUpperCase(),initials:form.initials.toUpperCase(),name:form.name,email:form.email,password:form.password,color:form.color,role:form.role,status:"active",joinedAt:new Date().toISOString().split("T")[0]};
-    setUsers(u=>[...u,nu]);
-    setNewCreds({...nu});
+  const handleCreate=async form=>{
+    const hashedPw=await hashPassword(form.password);
+    // Keep plainPw only for the credentials modal display (never stored in DB)
+    const nu={id:form.initials.toUpperCase(),initials:form.initials.toUpperCase(),name:form.name,email:form.email,password:hashedPw,color:form.color,role:form.role,status:"active",joinedAt:new Date().toISOString().split("T")[0]};
+    await onCreateUser(nu);
+    setNewCreds({...nu,plainPw:form.password}); // plainPw only for one-time display
     setShowInvite(false);
   };
-  const handleEdit=form=>{setUsers(u=>u.map(x=>x.id===editUser.id?{...x,...form}:x));setEditUser(null);};
-  const handleDeactivate=id=>{if(!window.confirm("Deactivate this user?"))return;setUsers(u=>u.map(x=>x.id===id?{...x,status:x.status==="active"?"inactive":"active"}:x));};
-  const handleDelete=id=>{if(!window.confirm("Permanently delete this user?"))return;setUsers(u=>u.filter(x=>x.id!==id));};
+  const handleEdit=async form=>{await onUpdateUser({...editUser,...form});setEditUser(null);};
+  const handleDeactivate=async id=>{if(!window.confirm("Deactivate this user?"))return;const u=users.find(x=>x.id===id);if(u)await onUpdateUser({...u,status:u.status==="active"?"inactive":"active"});};
+  const handleDelete=async id=>{if(!window.confirm("Permanently delete this user?"))return;await onDeleteUser(id);};
 
   return(
     <div className="users-page">
@@ -2094,20 +2369,25 @@ function FilterPanel({filters,addFilter,removeFilter,clearFilters,onClose,column
 }
 
 /* ════════════════════════════════
-   MAIN APP
+   MAIN APP  — Firebase Firestore
 ════════════════════════════════ */
-/* ── localStorage persistence ── */
-const LS={tasks:"fw_tasks",users:"fw_users",db:"fw_db",nextId:"fw_nextId"};
-const lsGet=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
-const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn("localStorage unavailable",e);}};
+const LS_NEXTID='fw_nextId';
 
 function App(){
-  useEffect(()=>{const s=lsGet(LS.nextId,null);if(s&&s>_nextId)_nextId=s;},[]);
+  /* ── Firebase / config state ── */
+  const [fbConfig,setFbConfig]=useState(()=>lsGet(LS_FB_CONFIG,null));
+  const [fbReady,setFbReady]=useState(false);
+  const [dataLoading,setDataLoading]=useState(true);
+  const [syncErr,setSyncErr]=useState('');
 
+  /* ── Cloud data (driven by Firestore onSnapshot) ── */
   const [currentUser,setCurrentUser]=useState(null);
-  const [users,setUsers]=useState(()=>lsGet(LS.users,INIT_USERS));
-  const [tasks,setTasks]=useState(()=>lsGet(LS.tasks,SEED_TASKS));
-  const [db,setDb]=useState(()=>lsGet(LS.db,INIT_DB));
+  const [users,setUsers]=useState([]);
+  const [tasks,setTasks]=useState([]);
+  const [db,setDb]=useState(INIT_DB);
+  const [photos,setPhotos]=useState([]);
+
+  /* ── UI state ── */
   const [view,setView]=useState("board");
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const [activeNav,setActiveNav]=useState("my-tasks");
@@ -2128,82 +2408,229 @@ function App(){
   const [saveFlash,setSaveFlash]=useState(false);
   const [showProfile,setShowProfile]=useState(false);
   const [showPunchReport,setShowPunchReport]=useState(false);
-  const [welcomeUser,setWelcomeUser]=useState(null); // set when arriving via invite link
+  const [welcomeUser,setWelcomeUser]=useState(null);
   const sortMenuRef=useRef();
   const undoTimerRef=useRef();
   const importRef=useRef();
   const saveTimer=useRef();
+  const unsubsRef=useRef([]);
 
-  /* Auto-save tasks/users/db to localStorage */
-  const flash=useCallback(()=>{if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{setSaveFlash(true);setTimeout(()=>setSaveFlash(false),1800);},500);},[]);
-  useEffect(()=>{lsSet(LS.tasks,tasks);lsSet(LS.nextId,_nextId);flash();},[tasks]);
-  useEffect(()=>{lsSet(LS.users,users);},[users]);
-  useEffect(()=>{lsSet(LS.db,db);},[db]);
+  /* Save indicator flash */
+  const flash=useCallback(()=>{if(saveTimer.current)clearTimeout(saveTimer.current);saveTimer.current=setTimeout(()=>{setSaveFlash(true);setTimeout(()=>setSaveFlash(false),1800);},400);},[]);
 
-  /* Full data reset (admin only) */
-  const handleReset=()=>{
-    if(!window.confirm("Reset ALL data to demo state?\nThis deletes all tasks, users and database changes.")) return;
-    [LS.tasks,LS.users,LS.db,LS.nextId].forEach(k=>localStorage.removeItem(k));
-    _nextId=1065; setTasks(SEED_TASKS); setUsers(INIT_USERS); setDb(INIT_DB); setCurrentUser(null);
-  };
+  /* Restore nextId counter */
+  useEffect(()=>{const s=lsGet(LS_NEXTID,null);if(s&&s>_nextId)_nextId=s;},[]);
 
-  useEffect(()=>{const check=()=>{if(window.innerWidth<768)setSidebarOpen(false);else setSidebarOpen(true);};check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
-  useEffect(()=>{const h=e=>{if(sortMenuRef.current&&!sortMenuRef.current.contains(e.target))setShowSortMenu(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+  /* ════════════════════════════════
+     FIREBASE REAL-TIME LISTENERS
+  ════════════════════════════════ */
+  useEffect(()=>{
+    if(!fbConfig){setDataLoading(false);return;}
+    setSyncErr('');
+    let fs;
+    try{fs=initFirebase(fbConfig);setFbReady(true);}
+    catch(e){setSyncErr('Firebase init failed: '+e.message);setDataLoading(false);return;}
+
+    let loaded={t:false,u:false,d:false,p:false};
+    const chk=()=>{if(loaded.t&&loaded.u&&loaded.d&&loaded.p){setDataLoading(false);flash();}};
+
+    /* Tasks */
+    const u1=fs.collection('tasks').onSnapshot(snap=>{
+      setTasks(snap.docs.map(d=>d.data()));
+      lsSet(LS_NEXTID,_nextId);
+      if(!loaded.t){loaded.t=true;chk();}else flash();
+    },e=>setSyncErr('Tasks: '+e.message));
+
+    /* Users — seed INIT_USERS on first run */
+    const u2=fs.collection('users').onSnapshot(snap=>{
+      if(snap.empty){
+        const batch=fs.batch();
+        INIT_USERS.forEach(u=>batch.set(fs.collection('users').doc(u.id),u));
+        batch.commit().catch(console.error);
+        setUsers(INIT_USERS);
+      } else {
+        const us=snap.docs.map(d=>d.data());
+        setUsers(us);
+        /* Keep currentUser in sync if their profile changed */
+        setCurrentUser(cu=>{
+          if(cu) return {...us.find(u=>u.id===cu.id)||cu};
+          /* Auto-restore session from localStorage */
+          const savedId=lsGet(LS_SESSION_UID,null);
+          if(savedId){const saved=us.find(u=>u.id===savedId&&u.status!=="inactive");if(saved)return saved;}
+          return null;
+        });
+      }
+      if(!loaded.u){loaded.u=true;chk();}
+    },e=>setSyncErr('Users: '+e.message));
+
+    /* Reference DB — seed INIT_DB on first run */
+    const u3=fs.doc('db/main').onSnapshot(snap=>{
+      if(!snap.exists){fs.doc('db/main').set(INIT_DB).catch(console.error);setDb(INIT_DB);}
+      else setDb(snap.data());
+      if(!loaded.d){loaded.d=true;chk();}
+    },e=>setSyncErr('DB: '+e.message));
+
+    /* Photos */
+    const u4=fs.collection('photos').onSnapshot(snap=>{
+      setPhotos(snap.docs.map(d=>d.data()));
+      if(!loaded.p){loaded.p=true;chk();}
+    },()=>{if(!loaded.p){loaded.p=true;chk();}});
+
+    unsubsRef.current=[u1,u2,u3,u4];
+    return()=>unsubsRef.current.forEach(u=>u());
+  },[fbConfig]);
 
   /* Parse invite link on first load */
   useEffect(()=>{
     const hash=window.location.hash;
-    if(!hash.startsWith('#invite=')) return;
+    if(!hash.startsWith('#invite='))return;
     const token=hash.slice(8);
     const inv=decodeInvite(token);
-    if(!inv||!inv.email||!inv.password) return;
-    setUsers(prev=>{
-      const exists=prev.some(u=>u.email.toLowerCase()===inv.email.toLowerCase());
-      if(exists) return prev;
-      return [...prev,{...inv,status:'active'}];
-    });
+    if(!inv||!inv.email||!inv.password)return;
+    if(fbReady&&getFS()){
+      // Account was already created in Firestore by Admin when they invited the user.
+      // Just verify it exists and show the welcome screen — no password in URL payload.
+      const uid=inv.id||inv.initials;
+      getFS().collection('users').doc(uid).get().then(doc=>{
+        // If somehow not in Firestore yet (edge case), create without password field
+        if(!doc.exists)getFS().collection('users').doc(uid).set({...inv,password:'',status:'active'}).catch(console.error);
+      });
+    }
     setWelcomeUser(inv);
     window.history.replaceState(null,'',window.location.pathname+window.location.search);
+  },[fbReady]);
+
+  /* ════════════════════════════════
+     TASK CRUD  (Firestore writes)
+  ════════════════════════════════ */
+  const createTask=useCallback(async data=>{
+    const fs=getFS();if(!fs)return;
+    const id=genId();lsSet(LS_NEXTID,id+1);
+    /* Upload any attached photos to photos collection */
+    const photoIds=[];
+    for(const p of (data.photos||[])){
+      const pid='photo_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      await fs.collection('photos').doc(pid).set({...p,id:pid,taskId:String(id)});
+      photoIds.push(pid);
+    }
+    const nt={...data,id,photoIds,photos:undefined,createdAt:TODAY,watchers:[],checklist:data.checklist||[],relatedTasks:[],activity:[]};
+    delete nt.photos;
+    await fs.collection('tasks').doc(String(id)).set(nt);
+    setTaskModal(null);
   },[]);
 
-  const filteredTasks=useMemo(()=>{
-    let res=[...tasks];
-    if(activeNav==="my-tasks")res=res.filter(t=>t.assignee===currentUser?.id);
-    else if(activeNav==="watched")res=res.filter(t=>(t.watchers||[]).includes(currentUser?.id));
-    if(search){const q=search.toLowerCase();res=res.filter(t=>t.title.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q)||String(t.id).includes(q));}
-    if(filters.assignee)res=res.filter(t=>t.assignee===filters.assignee);
-    if(filters.priority)res=res.filter(t=>t.priority===filters.priority);
-    if(filters.column)res=res.filter(t=>t.column===filters.column);
-    if(filters.overdue)res=res.filter(t=>isOverdue(t.dueDate));
-    res.sort((a,b)=>{let av,bv;switch(sort.field){case"id":av=a.id;bv=b.id;break;case"title":av=a.title;bv=b.title;break;case"dueDate":av=a.dueDate||"9999";bv=b.dueDate||"9999";break;case"priority":{const p={high:0,medium:1,low:2};av=p[a.priority];bv=p[b.priority];break;}default:av=a.assignee;bv=b.assignee;}return sort.dir==="asc"?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);});
-    return res;
-  },[tasks,activeNav,search,filters,sort,currentUser]);
+  const updateTask=useCallback(async updated=>{
+    const fs=getFS();if(!fs)return;
+    /* Handle any new photos that were added inline */
+    const newPhotos=(updated.photos||[]).filter(p=>p.data&&!p.id?.startsWith('photo_'));
+    const photoIds=[...(updated.photoIds||[])];
+    for(const p of newPhotos){
+      const pid='photo_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      await fs.collection('photos').doc(pid).set({...p,id:pid,taskId:String(updated.id)});
+      photoIds.push(pid);
+    }
+    const clean={...updated,photoIds,photos:undefined};delete clean.photos;
+    await fs.collection('tasks').doc(String(updated.id)).set(clean);
+    if(detailTask?.id===updated.id)setDetailTask({...clean,photoIds});
+  },[detailTask]);
 
-  const tasksByColumn=useMemo(()=>{const m={};COLUMNS.forEach(c=>{m[c.id]=[]});filteredTasks.forEach(t=>{if(m[t.column])m[t.column].push(t)});return m;},[filteredTasks]);
-  const visibleColumns=useMemo(()=>showEmptyColumns?COLUMNS:COLUMNS.filter(c=>(tasksByColumn[c.id]?.length||0)>0),[showEmptyColumns,tasksByColumn]);
-  const counts=useMemo(()=>({mine:tasks.filter(t=>t.assignee===currentUser?.id).length,watched:tasks.filter(t=>(t.watchers||[]).includes(currentUser?.id)).length,all:tasks.length}),[tasks,currentUser]);
-  const activeFilterCount=Object.keys(filters).length+(search?1:0);
-  const SORT_OPTIONS=[{field:"id",label:"Task ID"},{field:"title",label:"Title"},{field:"dueDate",label:"Due Date"},{field:"priority",label:"Priority"},{field:"assignee",label:"Assignee"}];
-  const sortLabel=SORT_OPTIONS.find(o=>o.field===sort.field)?.label||"Sort";
+  const deleteTask=useCallback(async id=>{
+    const fs=getFS();if(!fs)return;
+    /* Delete task's photos */
+    const task=tasks.find(t=>t.id===id);
+    if(task?.photoIds?.length){
+      const b=fs.batch();
+      task.photoIds.forEach(pid=>b.delete(fs.collection('photos').doc(pid)));
+      await b.commit();
+    }
+    await fs.collection('tasks').doc(String(id)).delete();
+    setTaskModal(null);setDetailTask(null);
+  },[tasks]);
 
-  const createTask=useCallback(data=>{
-    const nt={...data,id:genId(),createdAt:TODAY,watchers:[],photos:data.photos||[],checklist:[],relatedTasks:[],activity:[]};
-    setTasks(p=>[...p,nt]);setTaskModal(null);
-  },[]);
-  const updateTask=useCallback(updated=>{setTasks(p=>p.map(t=>t.id===updated.id?updated:t));if(detailTask?.id===updated.id)setDetailTask(updated);},[detailTask]);
-  const deleteTask=useCallback(id=>{setTasks(p=>p.filter(t=>t.id!==id));setTaskModal(null);setDetailTask(null);},[]);
-
-  const moveTask=useCallback((taskId,toColumn)=>{
-    let fromColumn;
-    setTasks(prev=>{const task=prev.find(t=>t.id===taskId);fromColumn=task?.column;if(fromColumn===toColumn)return prev;return prev.map(t=>t.id===taskId?{...t,column:toColumn}:t);});
+  const moveTask=useCallback(async(taskId,toColumn)=>{
+    const fs=getFS();if(!fs)return;
+    const task=tasks.find(t=>t.id===taskId);
+    const fromColumn=task?.column;
     if(!fromColumn||fromColumn===toColumn)return;
+    /* Optimistic local update for instant UX */
+    setTasks(prev=>prev.map(t=>t.id===taskId?{...t,column:toColumn}:t));
+    await fs.collection('tasks').doc(String(taskId)).update({column:toColumn});
     setUndoStack(p=>[...p,{taskId,fromColumn,toColumn}]);
     const label=COLUMNS.find(c=>c.id===toColumn)?.label||toColumn;
     if(undoTimerRef.current)clearTimeout(undoTimerRef.current);
     setUndoToast(label);
     undoTimerRef.current=setTimeout(()=>setUndoToast(null),5000);
+  },[tasks]);
+
+  const undoMove=useCallback(async()=>{
+    if(!undoStack.length)return;
+    const last=undoStack[undoStack.length-1];
+    const fs=getFS();if(!fs)return;
+    setTasks(ts=>ts.map(t=>t.id===last.taskId?{...t,column:last.fromColumn}:t));
+    await fs.collection('tasks').doc(String(last.taskId)).update({column:last.fromColumn});
+    setUndoStack(p=>p.slice(0,-1));
+    clearTimeout(undoTimerRef.current);setUndoToast(null);
+  },[undoStack]);
+
+  /* ════════════════════════════════
+     USER CRUD  (Firestore writes)
+  ════════════════════════════════ */
+  const fsCreateUser=useCallback(async user=>{
+    const fs=getFS();if(!fs)return;
+    await fs.collection('users').doc(user.id).set(user);
   },[]);
-  const undoMove=useCallback(()=>{setUndoStack(p=>{if(!p.length)return p;const last=p[p.length-1];setTasks(ts=>ts.map(t=>t.id===last.taskId?{...t,column:last.fromColumn}:t));clearTimeout(undoTimerRef.current);setUndoToast(null);return p.slice(0,-1);});},[]);
+  const fsUpdateUser=useCallback(async user=>{
+    const fs=getFS();if(!fs)return;
+    await fs.collection('users').doc(user.id).set(user);
+  },[]);
+  const fsDeleteUser=useCallback(async id=>{
+    const fs=getFS();if(!fs)return;
+    await fs.collection('users').doc(String(id)).delete();
+  },[]);
+
+  /* ════════════════════════════════
+     DB CRUD  (Firestore writes)
+  ════════════════════════════════ */
+  const fsUpdateDb=useCallback(async updater=>{
+    const fs=getFS();if(!fs)return;
+    setDb(prev=>{
+      const next=typeof updater==='function'?updater(prev):updater;
+      fs.doc('db/main').set(next).catch(console.error);
+      return next;
+    });
+  },[]);
+
+  /* ════════════════════════════════
+     PHOTO DELETE
+  ════════════════════════════════ */
+  const fsDeletePhoto=useCallback(async(photoId,taskId)=>{
+    const fs=getFS();if(!fs)return;
+    await fs.collection('photos').doc(photoId).delete();
+    await fs.collection('tasks').doc(String(taskId)).update({
+      photoIds: firebase.firestore.FieldValue.arrayRemove(photoId)
+    });
+  },[]);
+
+  /* ════════════════════════════════
+     FULL DATA RESET  (Admin only)
+  ════════════════════════════════ */
+  const handleReset=async()=>{
+    if(!window.confirm("Reset ALL Firestore data to demo state?\nThis is permanent and affects ALL users.")) return;
+    const fs=getFS();if(!fs)return;
+    try{
+      const deleteCol=async col=>{const s=await fs.collection(col).get();const b=fs.batch();s.docs.forEach(d=>b.delete(d.ref));await b.commit();};
+      await deleteCol('tasks');await deleteCol('photos');
+      const uSnap=await fs.collection('users').get();
+      const b=fs.batch();
+      uSnap.docs.forEach(d=>b.delete(d.ref));
+      INIT_USERS.forEach(u=>b.set(fs.collection('users').doc(u.id),u));
+      await b.commit();
+      await fs.doc('db/main').set(INIT_DB);
+      _nextId=1065;lsSet(LS_NEXTID,1065);
+      setCurrentUser(null);
+    }catch(e){alert('Reset failed: '+e.message);}
+  };
+
 
   const handleDragStart=useCallback((e,id)=>{if(!can(currentUser,"drag_task"))return;setDraggingId(id);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(id));},[currentUser]);
   const handleDragEnd=useCallback(()=>{setDraggingId(null);setDragOverCol(null);},[]);
@@ -2227,11 +2654,18 @@ function App(){
   const handleImportTasks=e=>{
     const file=e.target.files?.[0];if(!file)return;
     const reader=new FileReader();
-    reader.onload=ev=>{
+    reader.onload=async ev=>{
+      const fs=getFS();if(!fs)return;
       const lines=ev.target.result.split("\n").filter(Boolean);
       const headers=lines[0].split(",").map(h=>sanitize(h.replace(/^"|"$/g,"")));
-      const imported=lines.slice(1).map(line=>{const vals=line.split(",").map(v=>sanitize(v.replace(/^"|"$/g,"")));const o={};headers.forEach((h,i)=>{o[h]=vals[i]||""});return{id:genId(),title:o.title||"Imported",description:o.description||"",column:COLUMNS.find(c=>c.id===o.column||c.label===o.column)?.id||"cat-a",assignee:users.find(u=>u.id===o.assignee)?o.assignee:currentUser.id,priority:["high","medium","low"].includes(o.priority)?o.priority:"medium",dueDate:o.dueDate||"",createdAt:TODAY,watchers:[],photos:[],attrs:mkAttrs(),checklist:[],relatedTasks:[],activity:[]};}).filter(t=>t.title);
-      if(imported.length>0){setTasks(p=>[...p,...imported]);alert(`✅ Imported ${imported.length} tasks`);}
+      const imported=lines.slice(1).map(line=>{const vals=line.split(",").map(v=>sanitize(v.replace(/^"|"$/g,"")));const o={};headers.forEach((h,i)=>{o[h]=vals[i]||""});const id=genId();return{id,title:o.title||"Imported",description:o.description||"",column:COLUMNS.find(c=>c.id===o.column||c.label===o.column)?.id||"cat-a",assignee:users.find(u=>u.id===o.assignee)?o.assignee:currentUser.id,priority:["high","medium","low"].includes(o.priority)?o.priority:"medium",dueDate:o.dueDate||"",createdAt:TODAY,watchers:[],photoIds:[],attrs:mkAttrs(),checklist:[],relatedTasks:[],activity:[]};}).filter(t=>t.title);
+      if(imported.length>0){
+        const batch=fs.batch();
+        imported.forEach(t=>batch.set(fs.collection('tasks').doc(String(t.id)),t));
+        await batch.commit();
+        alert(`✅ Imported ${imported.length} tasks`);
+        lsSet(LS_NEXTID,_nextId);
+      }
     };
     reader.readAsText(file);e.target.value="";
   };
@@ -2241,14 +2675,31 @@ function App(){
   const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
   const isSpecialPage=["database","users","photos"].includes(activeNav);
 
+  /* Show setup screen if Firebase not configured */
+  if(!fbConfig) return <SetupScreen onSave={cfg=>{setFbConfig(cfg);lsSet(LS_FB_CONFIG,cfg);}}/>;
+  /* Show loading screen while Firestore data loads */
+  if(dataLoading) return <LoadingScreen msg={syncErr||"Connecting to Firestore…"}/>;
+  /* Show sync error persistently if severe */
+  if(syncErr&&!dataLoading&&!users.length) return <LoadingScreen msg={"⚠️ "+syncErr+" — Check your Firebase config."}/>;
   if(!currentUser && welcomeUser) return <WelcomePage user={welcomeUser} onContinue={()=>setWelcomeUser(null)}/>;
-  if(!currentUser) return <LoginPage users={users} onLogin={u=>{if(u.status==="invited"){const activated={...u,status:"active"};setUsers(prev=>prev.map(x=>x.id===activated.id?activated:x));setCurrentUser(activated);}else{setCurrentUser(u);}}}/>;
+  if(!currentUser) return <LoginPage users={users} onLogin={u=>{
+    const fresh=users.find(x=>x.id===u.id)||u;
+    if(fresh.status==="invited"){
+      const activated={...fresh,status:"active"};
+      const fs=getFS();if(fs)fs.collection('users').doc(activated.id).update({status:"active"}).catch(console.error);
+      lsSet(LS_SESSION_UID,activated.id);
+      setCurrentUser(activated);
+    } else {
+      lsSet(LS_SESSION_UID,fresh.id);
+      setCurrentUser(fresh);
+    }
+  }}/>;
 
 
   return(
     <>
       <div className="fw-app">
-        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>setCurrentUser(null)} onEditProfile={()=>setShowProfile(true)}/>
+        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>{lsSet(LS_SESSION_UID,null);setCurrentUser(null);}} onEditProfile={()=>setShowProfile(true)}/>
         <main className="fw-main">
           {/* TOP BAR */}
           <header className="fw-tb">
@@ -2277,16 +2728,16 @@ function App(){
                 <button className="btn btn-g btn-ic d-only" onClick={handleExport} title="Export CSV">⬇</button>
                 {(can(currentUser,"create_task"))&&<button className="btn btn-s d-only" onClick={()=>setShowPunchReport(true)} title="Punch item report" style={{gap:5}}>📋 <span className="d-only">Punch Report</span></button>}
               </>}
-              {saveFlash&&<span className="save-flash d-only">✓ Saved</span>}
+              {fbReady&&<span className="d-only" style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"#6b7280"}} title="Live — syncing with cloud"><span className="sync-dot"/><span style={{fontSize:11}}>Live</span></span>}{syncErr&&<span className="sync-err d-only" title={syncErr}>⚠️ Sync error</span>}
               {can(currentUser,"manage_db")&&<button className="btn btn-g btn-ic d-only" onClick={handleReset} title="Reset all data to demo state" style={{color:"#ef4444"}}>↺</button>}
               <div className="u-av" style={{background:currentUser.color,cursor:"pointer"}} title={`${currentUser.name} — Edit Profile`} onClick={()=>setShowProfile(true)} role="button" aria-label="Edit profile">{currentUser.initials}</div>
             </div>
           </header>
 
           {/* SPECIAL PAGES */}
-          {activeNav==="database"&&(can(currentUser,"manage_db")?<DatabasePage db={db} setDb={setDb} tasks={tasks} onTaskClick={setDetailTask} users={users}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>Database management is available to Admins only.</p></div>)}
-          {activeNav==="users"&&(can(currentUser,"manage_users")?<UsersPage users={users} setUsers={setUsers} currentUser={currentUser}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>User management is available to Admins only.</p></div>)}
-          {activeNav==="photos"&&<PhotosPage tasks={tasks} onTaskClick={setDetailTask} currentUser={currentUser}/>}
+          {activeNav==="database"&&(can(currentUser,"manage_db")?<DatabasePage db={db} setDb={fsUpdateDb} tasks={tasks} onTaskClick={setDetailTask} users={users}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>Database management is available to Admins only.</p></div>)}
+          {activeNav==="users"&&(can(currentUser,"manage_users")?<UsersPage users={users} onCreateUser={fsCreateUser} onUpdateUser={fsUpdateUser} onDeleteUser={fsDeleteUser} currentUser={currentUser}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>User management is available to Admins only.</p></div>)}
+          {activeNav==="photos"&&<PhotosPage tasks={tasks} photos={photos} onTaskClick={setDetailTask} currentUser={currentUser} onDeletePhoto={fsDeletePhoto}/>}
 
           {/* TASK PAGES */}
           {!isSpecialPage&&<>
@@ -2315,7 +2766,7 @@ function App(){
       </div>
 
       {/* TASK DETAIL PANEL */}
-      {detailTask&&<TaskDetailPanel task={detailTask} onClose={()=>setDetailTask(null)} onUpdate={updateTask} onDelete={()=>deleteTask(detailTask.id)} tasks={tasks} db={db} users={users} currentUser={currentUser}/>}
+      {detailTask&&<TaskDetailPanel task={detailTask} onClose={()=>setDetailTask(null)} onUpdate={updateTask} onDelete={()=>deleteTask(detailTask.id)} tasks={tasks} db={db} users={users} currentUser={currentUser} photos={photos.filter(p=>p.taskId===String(detailTask.id))} onDeletePhoto={(pid)=>fsDeletePhoto(pid,detailTask.id)}/>}
 
       {/* TASK FORM MODAL */}
       {taskModal&&<TaskForm mode={taskModal.mode} task={taskModal.task} onSave={createTask} onDelete={null} onClose={()=>setTaskModal(null)} db={db} users={users} currentUser={currentUser} defaultColumn={taskModal.defaultColumn}/>}
@@ -2327,7 +2778,7 @@ function App(){
       {showFilterPanel&&<FilterPanel filters={filters} addFilter={addFilter} removeFilter={removeFilter} clearFilters={clearFilters} onClose={()=>setShowFilterPanel(false)} columns={COLUMNS} users={users}/>}
 
       {/* PROFILE MODAL */}
-      {showProfile&&<ProfileModal currentUser={currentUser} users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} onClose={()=>setShowProfile(false)}/>}
+      {showProfile&&<ProfileModal currentUser={currentUser} users={users} onUpdateUser={async updated=>{await fsUpdateUser(updated);setCurrentUser(updated);}} onClose={()=>setShowProfile(false)}/>}
 
       {/* PUNCH REPORT MODAL */}
       {showPunchReport&&<PunchReportModal tasks={tasks} users={users} currentUser={currentUser} onClose={()=>setShowPunchReport(false)} onOpenTask={t=>{setDetailTask(t);setShowPunchReport(false);}}/>}
