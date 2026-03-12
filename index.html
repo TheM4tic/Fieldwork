@@ -1,15 +1,52 @@
 <!DOCTYPE html>
+<!--
+════════════════════════════════════════════════════════════════
+  FieldWork — Punch List Manager
+  File    : index_rev01.html
+  Based on: index_13_.html
+  Revision: 01  |  Date: 2026-03-12
+
+  CHANGES FROM index_13_.html:
+  ────────────────────────────────────────────────────────────
+  [NEW] Home Screen — search, stats strip, quick-action buttons
+  [NEW] Room List Screen — room+number combined, open item count
+  [NEW] Excel (XLSX) drag & drop import, smart update logic:
+        preserves photos/punchStatus, highlights new/changed
+  [NEW] Take Photo button — opens device camera on detail panel
+  [NEW] Bulk Photo Export via JSZip (all / per room / per item)
+  [NEW] Dedicated Notes field on task detail (separate from Desc)
+  [NEW] Mark as Closed / Mark as Open toggle buttons on detail
+  [NEW] Open/Closed indicator badge on task cards & list view
+  [NEW] Full date + time timestamps on photos
+  [NEW] Punch list fields: PL Item No, Description 1, Tag No,
+        Description 2, PL Cat. as extra task attributes
+  [CHG] App starts empty — data loaded via import or manual entry
+  [KEEP] Full login (admin/engineer/viewer), Firebase+localStorage,
+         Kanban, Calendar, Punch Report, Checklists, Activity,
+         DB Admin, Users page, all existing task fields
+════════════════════════════════════════════════════════════════
+  REVISION HISTORY
+  ────────────────────────────────────────────────────────────
+  Rev 01  2026-03-12  Initial punch list upgrade from index_13_
+════════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<meta name="description" content="FieldWork — Professional task management for field engineering and shipyard projects. Kanban board, checklists, photos, role-based access."/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FieldWork"/>
+<meta name="description" content="FieldWork — Punch List Manager for field engineering projects."/>
 <meta name="theme-color" content="#0e1118"/>
-<meta property="og:title" content="FieldWork — Task Management"/>
-<meta property="og:description" content="Professional task management for field engineering projects."/>
+<meta property="og:title" content="FieldWork — Punch List Manager Rev 01"/>
+<meta property="og:description" content="Punch list management with photo evidence for field engineering."/>
 <meta property="og:type" content="website"/>
-<title>FieldWork — Task Management</title>
+<title>FieldWork — Punch List Manager (Rev 01)</title>
 <!-- Favicon via SVG data URI -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22FieldWork%22%2C%22short_name%22%3A%22FieldWork%22%2C%22description%22%3A%22Field%20engineering%20task%20management%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230e1118%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22orientation%22%3A%22any%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20192%20192'%3E%3Crect%20width%3D'192'%20height%3D'192'%20rx%3D'40'%20fill%3D'%232563eb'%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='38' fill='%232563eb'/><rect x='28' y='28' width='46' height='46' rx='8' fill='white'/><rect x='106' y='28' width='46' height='46' rx='8' fill='white'/><rect x='28' y='106' width='46' height='46' rx='8' fill='white'/><line x1='106' y1='129' x2='152' y2='129' stroke='white' stroke-width='9' stroke-linecap='round'/><line x1='129' y1='106' x2='129' y2='152' stroke='white' stroke-width='9' stroke-linecap='round'/></svg>"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><rect x='4' y='4' width='10' height='10' rx='2' fill='white'/><rect x='18' y='4' width='10' height='10' rx='2' fill='white'/><rect x='4' y='18' width='10' height='10' rx='2' fill='white'/><line x1='18' y1='23' x2='28' y2='23' stroke='white' stroke-width='2.5' stroke-linecap='round'/><line x1='23' y1='18' x2='23' y2='28' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -19,6 +56,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<!-- SheetJS — XLSX import (Rev 01) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- JSZip — photo bulk export (Rev 01) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body,#root{height:100%;font-family:'Figtree',sans-serif;}
@@ -353,25 +394,98 @@ textarea.fi{resize:vertical;min-height:80px;}
 .ms-opt:hover{background:#f3f4f6;}
 .ms-opt.sel{background:#eff6ff;color:#2563eb;font-weight:600;}
 /* ── RESPONSIVE ── */
+/* ── BOTTOM NAV (mobile only) ── */
+.mob-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;z-index:200;padding-bottom:env(safe-area-inset-bottom,0px);flex-shrink:0;}
+.mob-nav-bar{display:flex;align-items:stretch;}
+.mob-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;border:none;background:none;cursor:pointer;font-family:'Figtree',sans-serif;color:#9ca3af;font-size:10px;font-weight:600;gap:3px;min-height:56px;transition:color .15s;-webkit-tap-highlight-color:transparent;}
+.mob-nav-btn.act{color:#2563eb;}
+.mob-nav-btn svg{flex-shrink:0;}
+.mob-nav-btn span{white-space:nowrap;}
+/* FAB */
+.mob-fab{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom,0px));right:18px;z-index:210;width:52px;height:52px;background:#2563eb;border-radius:50%;display:none;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.5);color:#fff;font-size:24px;line-height:1;transition:transform .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;}
+.mob-fab:active{transform:scale(.92);box-shadow:0 2px 10px rgba(37,99,235,.4);}
+/* Sidebar overlay */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:299;-webkit-tap-highlight-color:transparent;}
+
 @media(max-width:767px){
-  body{overflow:auto;}
-  .fw-app{height:auto;min-height:100vh;}
-  .fw-sb{position:fixed;height:100vh;top:0;left:0;}
-  .fw-sb.closed{width:0;min-width:0;}
-  .fw-main{min-height:100vh;}
-  .fw-tb{padding:0 12px;height:52px;}
-  .fw-board{padding:10px;overflow-x:hidden;overflow-y:visible;height:auto;flex-direction:column;}
-  .fw-col{width:100%;max-height:none;}
-  .mob-cs{display:flex;}
+  /* Safe area & layout */
+  body{overflow:auto;-webkit-overflow-scrolling:touch;}
+  .fw-app{height:100dvh;min-height:100dvh;flex-direction:column;}
+  .fw-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));}
+
+  /* Sidebar: slide in from left, full height, with overlay */
+  .fw-sb{position:fixed;height:100dvh;top:0;left:0;z-index:300;width:80vw;max-width:280px;transition:transform .25s ease;transform:translateX(0);}
+  .fw-sb.closed{transform:translateX(-100%);width:80vw;max-width:280px;min-width:0;}
+  .sb-overlay{display:block;}
+  .sb-overlay.hidden{display:none;}
+
+  /* Top bar */
+  .fw-tb{padding:0 12px 0 12px;height:52px;padding-top:env(safe-area-inset-top,0px);}
+
+  /* Hide desktop-only elements */
   .d-only{display:none!important;}
+
+  /* Show mobile-only elements */
+  .mob-bottom-nav{display:block;}
+  .mob-fab{display:flex;}
   .tc-move-btn{display:block;}
-  .fp{width:92%;max-width:300px;}
-  .fw-fb,.fw-legend,.photos-page,.db-page,.users-page{padding-left:12px;padding-right:12px;}
+  .mob-cs{display:flex;}
+
+  /* Board */
+  .fw-board{padding:10px;overflow-x:hidden;overflow-y:auto;height:auto;flex:1;flex-direction:column;}
+  .fw-col{width:100%;max-height:none;}
+
+  /* Filter panel */
+  .fp{width:92%;max-width:300px;padding-bottom:env(safe-area-inset-bottom,0px);}
+
+  /* Page padding */
+  .fw-fb{padding:0 12px;}
+  .fw-legend{padding:6px 12px;}
+  .photos-page,.db-page,.users-page{padding:12px 12px;}
+  .photos-page{padding-bottom:80px;}
+
+  /* Forms: 1 column */
   .fr2,.fr3{grid-template-columns:1fr;}
-  .td-panel{max-width:100%;}
+
+  /* Task detail: full screen, attributes as tab */
+  .td-panel{max-width:100%;width:100%;border-radius:0;}
   .td-right{display:none;}
-  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+  .td-ov{padding:0;align-items:flex-end;}
+
+  /* Modals: full screen on mobile */
+  .modal-ov{padding:0;align-items:flex-end;}
+  .modal{border-radius:16px 16px 0 0;max-height:96dvh;animation:slideUp .25s ease;}
+  .punch-modal{border-radius:16px 16px 0 0;max-height:96dvh;}
+
+  /* Photos */
+  .photo-grid{grid-template-columns:repeat(2,1fr);}
+
+  /* Touch target improvements */
+  .btn{min-height:40px;}
+  .mob-pill{min-height:36px;padding:6px 14px;}
+  .fi{min-height:44px;font-size:16px;} /* 16px prevents iOS zoom on focus */
+  select.fi{min-height:44px;font-size:16px;}
+
+  /* Lists: make scrollable */
+  .fw-list{padding:8px 0;overflow-x:auto;}
+  .list-wrap{border-radius:0;}
+  .lt{min-width:500px;}
+
+  /* Calendar */
+  .fw-cal{padding:10px 8px;}
+  .cal-cell{min-height:60px;padding:3px;}
+  .cal-dh{padding:5px 2px;font-size:9px;}
+
+  /* Login card full screen */
+  .login-card{border-radius:0;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;box-shadow:none;}
+  .setup-card{border-radius:0;min-height:100dvh;}
+
+  /* Users/DB page */
+  .user-card{flex-wrap:wrap;}
+  .user-actions{flex-wrap:wrap;gap:6px;width:100%;}
 }
+
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 @media(min-width:768px){.m-only{display:none!important;}}
 
 /* ── PROFILE MODAL ── */
@@ -402,8 +516,87 @@ textarea.fi{resize:vertical;min-height:80px;}
 }
 #print-area{display:none;}
 
+/* ══ REV 01 — PUNCH STATUS BADGES ══ */
+.ps-open{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;white-space:nowrap;}
+.ps-closed{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;}
 
-/* ── INVITE LINK ── */
+/* ══ REV 01 — CLOSE/OPEN ACTION BAR (detail panel) ══ */
+.punch-action-bar{display:flex;gap:8px;padding:10px 18px;background:#f8f9fc;border-bottom:1px solid #eaecf0;flex-shrink:0;align-items:center;flex-wrap:wrap;}
+.btn-close-item{background:#ea580c;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Figtree',sans-serif;display:flex;align-items:center;gap:6px;transition:background .15s;}
+.btn-close-item:hover{background:#c2410c;}
+.btn-open-item{background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Figtree',sans-serif;display:flex;align-items:center;gap:6px;transition:background .15s;}
+.btn-open-item:hover{background:#15803d;}
+
+/* ══ REV 01 — HOME SCREEN ══ */
+.home-screen{flex:1;overflow-y:auto;background:#eef0f6;}
+.home-hero{background:linear-gradient(135deg,#0e1118 0%,#1e2434 100%);padding:28px 20px 24px;color:#fff;}
+.home-project-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:4px;}
+.home-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:2px;}
+.home-date{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:16px;}
+.home-search{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.14);border-radius:11px;padding:10px 14px;}
+.home-search:focus-within{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);}
+.home-search input{background:none;border:none;outline:none;font-size:14px;color:#fff;flex:1;font-family:'Figtree',sans-serif;}
+.home-search input::placeholder{color:rgba(255,255,255,.36);}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 14px 4px;}
+.home-stat{background:#fff;border-radius:12px;padding:13px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;transition:box-shadow .15s;}
+.home-stat:hover{box-shadow:0 3px 10px rgba(0,0,0,.1);}
+.home-stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:2px;line-height:1;}
+.home-stat-lbl{font-size:11px;color:#9ca3af;font-weight:500;}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 14px 20px;}
+.home-btn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:15px 14px;border-radius:13px;border:none;cursor:pointer;font-family:'Figtree',sans-serif;text-align:left;transition:all .15s;min-height:84px;width:100%;}
+.home-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.home-btn-icon{font-size:22px;margin-bottom:2px;}
+.home-btn-label{font-size:13.5px;font-weight:700;line-height:1.2;}
+.home-btn-sub{font-size:11px;opacity:.65;line-height:1.3;}
+.hb-primary{background:#2563eb;color:#fff;}
+.hb-orange{background:#fff7ed;border:1.5px solid #fed7aa;color:#ea580c;}
+.hb-green{background:#f0fdf4;border:1.5px solid #bbf7d0;color:#15803d;}
+.hb-purple{background:#f5f3ff;border:1.5px solid #ddd6fe;color:#7c3aed;}
+.hb-blue{background:#eff6ff;border:1.5px solid #bfdbfe;color:#1d4ed8;}
+.hb-gray{background:#f9fafb;border:1.5px solid #e5e7eb;color:#374151;}
+.home-empty{text-align:center;padding:24px 24px 40px;color:#9ca3af;}
+
+/* ══ REV 01 — ROOM LIST SCREEN ══ */
+.room-list-screen{flex:1;overflow-y:auto;padding:16px;}
+.room-list-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+.room-item{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer;border:1.5px solid #eef0f6;transition:all .15s;}
+.room-item:hover{border-color:#2563eb;box-shadow:0 2px 8px rgba(37,99,235,.1);}
+.room-code{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;color:#2563eb;background:#eff6ff;padding:4px 10px;border-radius:7px;flex-shrink:0;min-width:58px;text-align:center;}
+.room-info{flex:1;min-width:0;}
+.room-name{font-size:13.5px;font-weight:600;color:#1a1d23;}
+.room-total{font-size:12px;color:#9ca3af;margin-top:1px;}
+.room-badge-open{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;flex-shrink:0;}
+.room-badge-done{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;flex-shrink:0;}
+.room-badge-empty{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;background:#f9fafb;color:#9ca3af;border:1px solid #e5e7eb;flex-shrink:0;}
+.room-empty{text-align:center;padding:60px 20px;color:#9ca3af;}
+
+/* ══ REV 01 — XLSX IMPORT MODAL ══ */
+.xlsx-drop{border:2.5px dashed #d1d5db;border-radius:13px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfd;}
+.xlsx-drop:hover,.xlsx-drop.drag{border-color:#2563eb;background:#eff6ff;}
+.xlsx-drop.has-file{border-color:#16a34a;background:#f0fdf4;cursor:default;}
+.xlsx-preview{overflow-x:auto;border-radius:8px;border:1px solid #e5e7eb;}
+.xlsx-preview table{width:100%;border-collapse:collapse;font-size:12px;}
+.xlsx-preview th{background:#f4f6fb;padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #eaecf0;white-space:nowrap;}
+.xlsx-preview td{padding:6px 10px;border-bottom:1px solid #f3f4f6;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ir-new{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:7px;font-size:12.5px;margin-bottom:4px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;}
+.ir-updated{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:7px;font-size:12.5px;margin-bottom:4px;background:#fffbeb;border:1px solid #fde68a;color:#d97706;}
+.ir-unchanged{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:7px;font-size:12.5px;margin-bottom:4px;background:#f9fafb;border:1px solid #e5e7eb;color:#9ca3af;}
+
+/* ══ REV 01 — PHOTO EXPORT MODAL ══ */
+.export-option{display:flex;align-items:center;gap:14px;padding:15px 17px;background:#f8f9fc;border-radius:12px;border:1.5px solid #e5e7eb;cursor:pointer;transition:all .15s;margin-bottom:10px;}
+.export-option:hover{border-color:#2563eb;background:#eff6ff;}
+.export-opt-icon{font-size:26px;flex-shrink:0;}
+.export-opt-info{flex:1;}
+.export-opt-title{font-size:14px;font-weight:700;color:#1a1d23;margin-bottom:2px;}
+.export-opt-sub{font-size:12.5px;color:#6b7280;}
+.export-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.export-list-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-radius:9px;border:1.5px solid #e5e7eb;cursor:pointer;transition:all .15s;}
+.export-list-item:hover{border-color:#2563eb;}
+
+/* ══ REV 01 — SIDEBAR REV BADGE ══ */
+.sb-rev{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.22);flex-shrink:0;}
+
+
 .invite-link-box{background:#0e1118;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-top:8px;}
 .invite-link-url{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;color:#93c5fd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .invite-link-copy{background:#2563eb;border:none;color:#fff;padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Figtree',sans-serif;flex-shrink:0;transition:background .15s;}
@@ -435,7 +628,7 @@ textarea.fi{resize:vertical;min-height:80px;}
 .setup-code{background:#0e1118;color:#93c5fd;font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;border-radius:7px;margin-top:8px;line-height:1.8;overflow-x:auto;}
 .setup-ft{padding:20px 32px;border-top:1px solid #f3f4f6;display:flex;gap:10px;align-items:center;}
 /* ── LOADING SCREEN ── */
-.loading-screen{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eef0f6;gap:16px;}
+.loading-screen{height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#eef0f6;gap:16px;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);}
 .loading-spinner{width:44px;height:44px;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-msg{font-size:14px;color:#9ca3af;font-weight:500;}
@@ -454,18 +647,22 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 /* ════════════════════════════════
    CONSTANTS
 ════════════════════════════════ */
+/* Rev 01 — revision identifier shown in UI & sidebar */
+const APP_REVISION = "Rev 01";
 const COL_COLORS={"due-today":"#ef4444","cat-a":"#f97316","cat-b":"#3b82f6","cat-c":"#8b5cf6","offshore":"#0891b2","verify-yard":"#d97706","verify-client":"#db2777","approved":"#16a34a"};
 const COLUMNS=[{id:"due-today",label:"Due Today"},{id:"cat-a",label:"Category A"},{id:"cat-b",label:"Category B"},{id:"cat-c",label:"Documentation"},{id:"offshore",label:"Offshore"},{id:"verify-yard",label:"Verify — Yard"},{id:"verify-client",label:"Verify — Client"},{id:"approved",label:"Approved"}];
 const PRI={high:{label:"High",color:"#ef4444",bg:"#fef2f2",icon:"▲"},medium:{label:"Medium",color:"#f59e0b",bg:"#fffbeb",icon:"◆"},low:{label:"Low",color:"#6b7280",bg:"#f9fafb",icon:"▼"}};
 const COLOR_PALETTE=["#ef4444","#f97316","#f59e0b","#16a34a","#0891b2","#3b82f6","#8b5cf6","#db2777","#6b7280","#1a1d23"];
 const ROLE_COLORS={admin:{bg:"#eff6ff",color:"#2563eb"},engineer:{bg:"#f0fdf4",color:"#16a34a"},viewer:{bg:"#fffbeb",color:"#d97706"}};
 const ROLE_ICONS={admin:"👑",engineer:"🔧",viewer:"👁️"};
-let _nextId=1065; const genId=()=>_nextId++;
+let _nextId=1001; const genId=()=>_nextId++;
 const TODAY=new Date().toISOString().split("T")[0];
 const fmtDate=d=>{if(!d)return"";const[,m,day]=d.split("-");const mn=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return`${mn[+m-1]} ${+day}`;};
 const isOverdue=d=>d&&d<TODAY;
 const sanitize=v=>{if(!v)return"";return String(v).replace(/^[=+\-@\t\r]+/,"");};
 const fmtSize=b=>{if(b<1024)return b+"B";if(b<1048576)return(b/1024).toFixed(1)+"KB";return(b/1048576).toFixed(1)+"MB";};
+/* Rev 01 — full date+time string for photo timestamps */
+const nowStr=()=>new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
 /* ════════════════════════════════
    PERMISSIONS
@@ -515,21 +712,25 @@ const INIT_USERS=[
 ];
 
 /* ════════════════════════════════
-   SEED TASKS (compact)
+   TASK ATTRIBUTES FACTORY  (Rev 01 — punch fields added)
 ════════════════════════════════ */
-const mkAttrs=(o={})=>({category:"",location:"",roomNumber:"",plan:"",startDate:"",endDate:"",tags:[],watchersList:[],commissioningDoc:"",mcDoc:"",punchItem:"No",originalStatus:"Open",originalPunchNmbr:"",reqCode:"",supplier:"",poDescription:"",responsibleContractor:"",...o});
-const SEED_TASKS=[
-  {id:1052,title:"Replace corroded pipe flange — Section 4B",description:"Urgent replacement needed. Materials ordered and on site.",column:"due-today",assignee:"GH",priority:"high",dueDate:TODAY,createdAt:"2026-02-01",watchers:["MR"],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Engine Room",roomNumber:"ER-01",plan:"P&ID — Engine Room",tags:["Urgent"],punchItem:"Yes",originalStatus:"Open",supplier:"Marine Parts BV",responsibleContractor:"Van Oord"}),checklist:[{id:1,text:"Inspect flange",done:true},{id:2,text:"Order parts",done:true},{id:3,text:"Welding crew",done:false},{id:4,text:"QC sign-off",done:false}],relatedTasks:[],activity:[{id:1,author:"GH",time:"2026-02-01 09:15",type:"comment",text:"Task created."},{id:2,author:"MR",time:"2026-02-15 14:30",type:"comment",text:"Parts ordered from Marine Parts BV. ETA 5 days."}]},
-  {id:1036,title:"Verify weld quality — starboard joints",description:"Visual and NDT inspection required for all joints.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-12",createdAt:"2026-01-28",watchers:["MR"],photos:[],attrs:mkAttrs({category:"Structural",location:"Hull — Starboard",plan:"Hull Structural Plan Rev.4",tags:["Class","DNV"],mcDoc:"MC-2024-088",punchItem:"No",originalStatus:"In Progress",reqCode:"RC-2024-001",responsibleContractor:"Heerema Marine"}),checklist:[{id:1,text:"Visual inspection",done:false},{id:2,text:"NDT test samples",done:false}],relatedTasks:[],activity:[{id:1,author:"GH",time:"2026-01-28 10:00",type:"comment",text:"Assigned."}]},
-  {id:1040,title:"Update fire suppression system drawings",description:"Incorporate recent layout changes from structural engineering.",column:"cat-b",assignee:"MR",priority:"medium",dueDate:"2026-03-18",createdAt:"2026-01-29",watchers:[],photos:[],attrs:mkAttrs({category:"Documentation",location:"Bridge",roomNumber:"BRG-01",plan:"Fire Safety Layout Rev.2",tags:["SOLAS"],commissioningDoc:"CD-2024-012",punchItem:"No",originalStatus:"Open"}),checklist:[],relatedTasks:[],activity:[]},
-  {id:1043,title:"Install safety handrails — Deck 3",description:"Per SOLAS requirements. Materials on site.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-14",createdAt:"2026-01-30",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Safety",location:"Deck 3",roomNumber:"D3-01",tags:["SOLAS","Urgent"],punchItem:"Yes",originalPunchNmbr:"P-2024-043",reqCode:"RC-2024-002",supplier:"IHC Holland",responsibleContractor:"Van Oord"}),checklist:[{id:1,text:"Measure and cut",done:false},{id:2,text:"Weld brackets",done:false},{id:3,text:"SOLAS check",done:false}],relatedTasks:[],activity:[]},
-  {id:1047,title:"Submit hull inspection report to DNV",description:"Classification report deadline approaching.",column:"cat-b",assignee:"GH",priority:"high",dueDate:"2026-03-11",createdAt:"2026-02-03",watchers:["MR","GH"],photos:[],attrs:mkAttrs({category:"Documentation",location:"Hull — Port",plan:"Hull Structural Plan Rev.4",tags:["DNV","Class"],commissioningDoc:"CD-2024-015",punchItem:"No",originalStatus:"In Progress",reqCode:"RC-2024-002",responsibleContractor:"Heerema Marine"}),checklist:[{id:1,text:"Collect sign-offs",done:true},{id:2,text:"Compile photos",done:false},{id:3,text:"Draft report",done:false},{id:4,text:"Submit to DNV",done:false}],relatedTasks:[],activity:[]},
-  {id:1048,title:"Check bilge pump operation",description:"Monthly operational test per maintenance schedule.",column:"cat-b",assignee:"GH",priority:"low",dueDate:"2026-03-25",createdAt:"2026-02-04",watchers:[],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Pump Room",roomNumber:"PR-01"}),checklist:[{id:1,text:"Start test cycle",done:false},{id:2,text:"Log readings",done:false}],relatedTasks:[],activity:[]},
-  {id:1025,title:"Procurement specs — new anchor chain",description:"Quotes from minimum 3 approved suppliers.",column:"cat-a",assignee:"MR",priority:"medium",dueDate:"2026-03-22",createdAt:"2026-01-20",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Mechanical",reqCode:"RC-2025-001",supplier:"Damen Technical",poDescription:"Anchor chain 76mm stud-link"}),checklist:[{id:1,text:"Draft spec",done:true},{id:2,text:"Send RFQ",done:false},{id:3,text:"Evaluate and award",done:false}],relatedTasks:[],activity:[]},
-  {id:1018,title:"Offshore crane certification renewal",description:"Lloyds certification expires end of month.",column:"offshore",assignee:"GH",priority:"high",dueDate:"2026-03-13",createdAt:"2026-01-18",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Offshore",location:"Deck 3",roomNumber:"D3-02",tags:["Class"],punchItem:"Yes",originalPunchNmbr:"P-2024-018",originalStatus:"In Progress",responsibleContractor:"Allseas Group"}),checklist:[{id:1,text:"Gather cert docs",done:false},{id:2,text:"Book Lloyds inspector",done:false}],relatedTasks:[],activity:[]},
-  {id:1055,title:"Yard inspection — propeller shaft",description:"Pre-installation check by classification body.",column:"verify-yard",assignee:"GH",priority:"medium",dueDate:"2026-03-17",createdAt:"2026-02-05",watchers:["GH"],photos:[],attrs:mkAttrs({category:"Mechanical",plan:"Hull Structural Plan Rev.4",tags:["Class","DNV"],mcDoc:"MC-2024-095",supplier:"Wärtsilä",responsibleContractor:"SHL Offshore"}),checklist:[],relatedTasks:[],activity:[]},
-  {id:1010,title:"Grease main engine bearings",description:"Routine maintenance — completed.",column:"approved",assignee:"GH",priority:"low",dueDate:"2026-03-05",createdAt:"2026-01-10",watchers:[],photos:[],attrs:mkAttrs({category:"Mechanical",location:"Engine Room",roomNumber:"ER-01",originalStatus:"Closed"}),checklist:[{id:1,text:"Grease bearings 1-4",done:true},{id:2,text:"Log in maintenance book",done:true}],relatedTasks:[],activity:[{id:1,author:"GH",time:"2026-03-05 16:00",type:"comment",text:"Completed. No abnormalities found."}]},
-];
+const mkAttrs=(o={})=>({
+  /* ── existing fields ── */
+  category:"",location:"",roomNumber:"",plan:"",startDate:"",endDate:"",
+  tags:[],watchersList:[],commissioningDoc:"",mcDoc:"",
+  punchItem:"No",originalStatus:"Open",originalPunchNmbr:"",
+  reqCode:"",supplier:"",poDescription:"",responsibleContractor:"",
+  /* ── NEW Rev 01: punch list fields from Excel ── */
+  plItemNo:"",description1:"",tagNo:"",description2:"",plCat:"",
+  /* ── NEW Rev 01: app-controlled open/closed indicator ── */
+  punchStatus:"Open",
+  /* ── NEW Rev 01: dedicated notes field ── */
+  notes:"",
+  ...o
+});
+
+/* Rev 01 — App starts EMPTY. All data loaded via Excel import or manual entry. */
+const SEED_TASKS=[];
 
 
 /* ════════════════════════════════════════════════════
@@ -539,6 +740,7 @@ const SEED_TASKS=[
 /* Store config in localStorage so user only pastes it once */
 const LS_FB_CONFIG   = 'fw_firebase_config';
 const LS_SESSION_UID = 'fw_session_uid';
+const LS_NEXTID      = 'fw_nextId'; /* Rev 01 — persist next task ID */
 let _firestore = null;
 
 const getFS = () => _firestore;
@@ -628,28 +830,420 @@ function InlineEdit({value,onChange,disabled=false}){
 /* ════════════════════════════════
    PHOTO UPLOAD ZONE
 ════════════════════════════════ */
-function PhotoUploadZone({onFiles,disabled=false}){
-  const ref=useRef();const [drag,setDrag]=useState(false);
+/* ════════════════════════════════
+   PHOTO UPLOAD ZONE  (Rev 01 — camera button added)
+════════════════════════════════ */
+function PhotoUploadZone({onFiles,disabled=false,showCamera=false}){
+  const ref=useRef();
+  const cameraRef=useRef();
+  const [drag,setDrag]=useState(false);
   const handle=files=>{
     if(disabled||!files.length)return;
-    // Pass file objects with metadata; parent is responsible for compression
     const ps=[...files].map(f=>new Promise(res=>{
-      res({_file:f,id:Date.now()+Math.random(),name:f.name,size:fmtSize(f.size),type:f.type,uploadedAt:new Date().toLocaleString()});
+      /* Rev 01 — full date+time timestamp */
+      res({_file:f,id:Date.now()+Math.random(),name:f.name,size:fmtSize(f.size),type:f.type,uploadedAt:nowStr()});
     }));
     Promise.all(ps).then(onFiles);
   };
   return(
     <div>
-      <div className={`photo-upload-zone${drag?" drag":""}`} style={disabled?{opacity:.5,cursor:"not-allowed"}:{}}
-        onClick={()=>!disabled&&ref.current?.click()}
-        onDragOver={e=>{e.preventDefault();setDrag(true);}}
-        onDragLeave={()=>setDrag(false)}
-        onDrop={e=>{e.preventDefault();setDrag(false);handle(e.dataTransfer.files);}}>
-        <div style={{fontSize:28}}>📷</div>
-        <p>{disabled?"Photo upload not available for your role":"Click to upload or drag & drop photos"}</p>
-        <p style={{fontSize:11.5}}>JPG, PNG, WEBP, GIF</p>
-      </div>
+      {/* Rev 01 — camera + upload buttons when showCamera=true */}
+      {showCamera&&(
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <button type="button" className="btn btn-p" style={{flex:1,justifyContent:"center",minHeight:42}} onClick={()=>!disabled&&cameraRef.current?.click()} disabled={disabled}>
+            📷 Take Photo
+          </button>
+          <button type="button" className="btn btn-s" style={{flex:1,justifyContent:"center",minHeight:42}} onClick={()=>!disabled&&ref.current?.click()} disabled={disabled}>
+            ⬆ Upload
+          </button>
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
+        </div>
+      )}
+      {!showCamera&&(
+        <div className={`photo-upload-zone${drag?" drag":""}`} style={disabled?{opacity:.5,cursor:"not-allowed"}:{}}
+          onClick={()=>!disabled&&ref.current?.click()}
+          onDragOver={e=>{e.preventDefault();setDrag(true);}}
+          onDragLeave={()=>setDrag(false)}
+          onDrop={e=>{e.preventDefault();setDrag(false);handle(e.dataTransfer.files);}}>
+          <div style={{fontSize:28}}>📷</div>
+          <p>{disabled?"Photo upload not available for your role":"Click to upload or drag & drop photos"}</p>
+          <p style={{fontSize:11.5}}>JPG, PNG, WEBP, GIF</p>
+        </div>
+      )}
       <input ref={ref} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>handle(e.target.files)}/>
+    </div>
+  );
+}
+
+
+/* ════════════════════════════════
+   HOME SCREEN  [Rev 01]
+════════════════════════════════ */
+function HomeScreen({tasks,photos,currentUser,onNavigate,onImportXlsx,onExportPhotos,onPunchReport}){
+  const [srch,setSrch]=useState("");
+  const total=tasks.length;
+  const openCnt=tasks.filter(t=>(t.attrs?.punchStatus||"Open")!=="Closed").length;
+  const closedCnt=tasks.filter(t=>t.attrs?.punchStatus==="Closed").length;
+  const handleSearch=e=>{if(e.key==="Enter"&&srch.trim())onNavigate("all",{search:srch.trim()});};
+  return(
+    <div className="home-screen">
+      <div className="home-hero">
+        <div className="home-project-label">FieldWork — {APP_REVISION}</div>
+        <div className="home-title">Good to see you 👋</div>
+        <div className="home-date">{new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+        <div className="home-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={srch} onChange={e=>setSrch(e.target.value)} onKeyDown={handleSearch} placeholder="Search by PL Item no, description… (Enter)"/>
+          {srch&&<button type="button" style={{background:"none",border:"none",color:"rgba(255,255,255,.4)",cursor:"pointer",fontSize:16,padding:"0 2px",lineHeight:1}} onClick={()=>setSrch("")}>✕</button>}
+        </div>
+      </div>
+      <div className="home-stats">
+        <div className="home-stat" onClick={()=>onNavigate("all")}>
+          <div className="home-stat-num" style={{color:"#2563eb"}}>{total}</div>
+          <div className="home-stat-lbl">Total Items</div>
+        </div>
+        <div className="home-stat" onClick={()=>onNavigate("all",{punchStatus:"Open"})}>
+          <div className="home-stat-num" style={{color:"#ea580c"}}>{openCnt}</div>
+          <div className="home-stat-lbl">Open</div>
+        </div>
+        <div className="home-stat" onClick={()=>onNavigate("all",{punchStatus:"Closed"})}>
+          <div className="home-stat-num" style={{color:"#16a34a"}}>{closedCnt}</div>
+          <div className="home-stat-lbl">Closed</div>
+        </div>
+      </div>
+      <div className="home-grid">
+        <button type="button" className="home-btn hb-primary" onClick={()=>onNavigate("rooms")}>
+          <span className="home-btn-icon">🚪</span>
+          <span className="home-btn-label">Browse by Room</span>
+          <span className="home-btn-sub">Filter items by room</span>
+        </button>
+        <button type="button" className="home-btn hb-blue" onClick={onImportXlsx}>
+          <span className="home-btn-icon">📊</span>
+          <span className="home-btn-label">Import Excel</span>
+          <span className="home-btn-sub">Drag & drop .xlsx file</span>
+        </button>
+        <button type="button" className="home-btn hb-orange" onClick={()=>onNavigate("all",{punchStatus:"Open"})}>
+          <span className="home-btn-icon">🔴</span>
+          <span className="home-btn-label">Open Items</span>
+          <span className="home-btn-sub">{openCnt} item{openCnt!==1?"s":""} open</span>
+        </button>
+        <button type="button" className="home-btn hb-green" onClick={()=>onNavigate("all",{punchStatus:"Closed"})}>
+          <span className="home-btn-icon">✅</span>
+          <span className="home-btn-label">Closed Items</span>
+          <span className="home-btn-sub">{closedCnt} item{closedCnt!==1?"s":""} closed</span>
+        </button>
+        <button type="button" className="home-btn hb-purple" onClick={onExportPhotos}>
+          <span className="home-btn-icon">📤</span>
+          <span className="home-btn-label">Export Photos</span>
+          <span className="home-btn-sub">{photos.length} photo{photos.length!==1?"s":""} total</span>
+        </button>
+        {can(currentUser,"create_task")&&(
+          <button type="button" className="home-btn hb-gray" onClick={onPunchReport}>
+            <span className="home-btn-icon">📋</span>
+            <span className="home-btn-label">Punch Report</span>
+            <span className="home-btn-sub">PDF / Email report</span>
+          </button>
+        )}
+      </div>
+      {total===0&&(
+        <div className="home-empty">
+          <div style={{fontSize:38,marginBottom:10}}>📋</div>
+          <div style={{fontWeight:700,fontSize:15,color:"#374151",marginBottom:6}}>No punch items yet</div>
+          <div style={{fontSize:13,lineHeight:1.6,marginBottom:16}}>Import an Excel file to load your punch list,<br/>or create items manually.</div>
+          <button type="button" className="btn btn-p" style={{justifyContent:"center"}} onClick={onImportXlsx}>📊 Import Excel Punchlist</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   ROOM LIST SCREEN  [Rev 01]
+════════════════════════════════ */
+function RoomListScreen({tasks,onRoomSelect}){
+  const [search,setSearch]=useState("");
+  const roomMap=useMemo(()=>{
+    const m={};
+    tasks.forEach(t=>{
+      const code=(t.attrs?.roomNumber||"").trim();
+      if(!code)return;
+      if(!m[code])m[code]={code,total:0,open:0,closed:0};
+      m[code].total++;
+      if((t.attrs?.punchStatus||"Open")==="Closed")m[code].closed++;
+      else m[code].open++;
+    });
+    return m;
+  },[tasks]);
+  const rooms=Object.values(roomMap)
+    .filter(r=>!search||r.code.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b)=>a.code.localeCompare(b.code));
+  return(
+    <div className="room-list-screen">
+      <div className="room-list-hd">
+        <div>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800}}>🚪 Rooms</div>
+          <div style={{fontSize:12.5,color:"#9ca3af",marginTop:2}}>{rooms.length} room{rooms.length!==1?"s":""} with punch items</div>
+        </div>
+        <div className="tb-srch" style={{maxWidth:190,marginLeft:"auto"}}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter rooms…"/>
+        </div>
+      </div>
+      {rooms.length===0&&(
+        <div className="room-empty">
+          <div style={{fontSize:34,marginBottom:10}}>🚪</div>
+          <div style={{fontWeight:600,fontSize:14,color:"#374151",marginBottom:5}}>{search?"No rooms match":"No rooms yet"}</div>
+          <div style={{fontSize:13}}>{search?"Try a different search":"Import an Excel file to populate rooms."}</div>
+        </div>
+      )}
+      {rooms.map(r=>(
+        <div key={r.code} className="room-item" onClick={()=>onRoomSelect(r.code)}>
+          <div className="room-code">{r.code}</div>
+          <div className="room-info">
+            <div className="room-name">Room {r.code}</div>
+            <div className="room-total">{r.total} punch item{r.total!==1?"s":""}</div>
+          </div>
+          {r.total===0
+            ? <div className="room-badge-empty">— empty</div>
+            : r.open===0
+              ? <div className="room-badge-done">✅ All closed</div>
+              : <div className="room-badge-open">🔴 {r.open} open</div>
+          }
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   XLSX IMPORT MODAL  [Rev 01]
+   Smart update: preserve photos & punchStatus, highlight new/changed
+════════════════════════════════ */
+function XlsxImportModal({tasks,onImport,onClose}){
+  const [drag,setDrag]=useState(false);
+  const [file,setFile]=useState(null);
+  const [rows,setRows]=useState([]);
+  const [importing,setImporting]=useState(false);
+  const [results,setResults]=useState(null);
+  const dropRef=useRef(); const inputRef=useRef();
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  const norm=s=>String(s||"").toLowerCase().replace(/[\s._\-]+/g,"");
+  const COL_MAP={
+    plitemno:"plItemNo",plno:"plItemNo",itemnr:"plItemNo",itemnumber:"plItemNo","pl item no":"plItemNo",
+    room:"room",roomnumber:"room",roomno:"room",
+    description1:"description1",desc1:"description1",description:"description1","description 1":"description1",
+    tagno:"tagNo",tag:"tagNo",tagnumber:"tagNo","tag no":"tagNo",
+    description2:"description2",desc2:"description2",remark:"description2",remarks:"description2","description 2":"description2",
+    plcat:"plCat",plcategory:"plCat","pl cat":"plCat","pl category":"plCat",cat:"plCat",category:"plCat",
+    status:"status",originalstatus:"status",
+  };
+
+  const parseFile=async f=>{
+    try{
+      const ab=await f.arrayBuffer();
+      const wb=XLSX.read(ab,{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rawRows=XLSX.utils.sheet_to_json(ws,{defval:""});
+      if(!rawRows.length){alert("No data rows found in Excel file.");return;}
+      const mapped=rawRows.map(row=>{
+        const r={};
+        Object.entries(row).forEach(([k,v])=>{
+          const field=COL_MAP[norm(k)]||COL_MAP[k.toLowerCase()];
+          if(field) r[field]=sanitize(String(v).trim());
+        });
+        return r;
+      }).filter(r=>r.plItemNo||r.room||r.description1);
+      setRows(mapped);setFile(f);
+    }catch(e){alert("Could not read Excel file: "+e.message);}
+  };
+
+  const handleDrop=e=>{e.preventDefault();setDrag(false);const f=e.dataTransfer.files?.[0];if(f)parseFile(f);};
+  const handlePick=e=>{const f=e.target.files?.[0];if(f)parseFile(f);};
+
+  const handleImport=async()=>{
+    if(!rows.length)return;
+    setImporting(true);
+    try{
+      const res={added:[],updated:[],unchanged:[]};
+      await onImport(rows,res);
+      setResults(res);
+    }catch(e){alert("Import error: "+e.message);}
+    setImporting(false);
+  };
+
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:640}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd"><h2 className="m-ht">📊 Import Excel Punchlist</h2><button type="button" className="btn btn-g btn-ic" onClick={onClose}>✕</button></div>
+        <div className="m-bd">
+          {!results&&(
+            <>
+              <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"11px 14px",fontSize:12.5,color:"#1d4ed8",lineHeight:1.7}}>
+                <strong>Expected columns:</strong> PL Item no · Room · Description 1 · Tag no · Description 2 · PL Cat. · Status<br/>
+                <span style={{color:"#6b7280",fontSize:11.5}}>Existing items keep their photos and app status. New items are added. Nothing is deleted.</span>
+              </div>
+              <div ref={dropRef} className={`xlsx-drop${drag?" drag":""}${file?" has-file":""}`}
+                onClick={()=>!file&&inputRef.current?.click()}
+                onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={handleDrop}>
+                <div style={{fontSize:38,marginBottom:8}}>{file?"📗":"📊"}</div>
+                {file
+                  ? <><div style={{fontWeight:700,fontSize:14.5,color:"#15803d",marginBottom:4}}>✅ {file.name}</div><div style={{fontSize:13,color:"#6b7280"}}>{rows.length} row{rows.length!==1?"s":""} found</div><button type="button" className="btn btn-s" style={{marginTop:10,fontSize:12}} onClick={e=>{e.stopPropagation();setFile(null);setRows([]);}}>✕ Remove</button></>
+                  : <><div style={{fontWeight:700,fontSize:14.5,color:"#374151",marginBottom:4}}>Drag & drop your Excel file here</div><div style={{fontSize:13,color:"#9ca3af",marginBottom:8}}>or click to browse</div><div style={{fontSize:11.5,color:"#c4c9d4"}}>.xlsx · .xls · .csv</div></>
+                }
+              </div>
+              <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={handlePick}/>
+              {rows.length>0&&(
+                <div>
+                  <div className="fl" style={{marginBottom:6}}>Preview (first 5 rows)</div>
+                  <div className="xlsx-preview">
+                    <table><thead><tr>{["PL Item No","Room","Description 1","Tag No","PL Cat.","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>{rows.slice(0,5).map((r,i)=>(
+                      <tr key={i}>
+                        <td style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{r.plItemNo||"—"}</td>
+                        <td>{r.room||"—"}</td><td>{r.description1||"—"}</td>
+                        <td style={{fontFamily:"'JetBrains Mono',monospace"}}>{r.tagNo||"—"}</td>
+                        <td>{r.plCat||"—"}</td><td>{r.status||"—"}</td>
+                      </tr>
+                    ))}
+                    {rows.length>5&&<tr><td colSpan={6} style={{textAlign:"center",color:"#9ca3af",fontSize:11.5}}>…and {rows.length-5} more</td></tr>}
+                    </tbody></table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {results&&(
+            <div>
+              <div style={{textAlign:"center",marginBottom:14}}>
+                <div style={{fontSize:34,marginBottom:8}}>✅</div>
+                <div style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:700,marginBottom:4}}>Import Complete</div>
+                <div style={{fontSize:13.5,color:"#6b7280"}}>{results.added.length} new · {results.updated.length} updated · {results.unchanged.length} unchanged</div>
+              </div>
+              <div style={{maxHeight:260,overflowY:"auto"}}>
+                {results.added.map((t,i)=><div key={i} className="ir-new"><span style={{fontWeight:700}}>🆕 NEW</span><span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,flexShrink:0}}>{t.attrs?.plItemNo||t.id}</span><span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</span></div>)}
+                {results.updated.map((t,i)=><div key={i} className="ir-updated"><span style={{fontWeight:700}}>🔄 UPDATED</span><span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,flexShrink:0}}>{t.attrs?.plItemNo||t.id}</span><span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</span></div>)}
+                {results.unchanged.length>0&&<div className="ir-unchanged">⚪ {results.unchanged.length} item{results.unchanged.length!==1?"s":""} unchanged</div>}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="m-ft">
+          <button type="button" className="btn btn-s" onClick={onClose}>{results?"Close":"Cancel"}</button>
+          {!results&&<button type="button" className="btn btn-p" onClick={handleImport} disabled={!rows.length||importing}>{importing?"⏳ Importing…":`⬆ Import ${rows.length} Row${rows.length!==1?"s":""}`}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   PHOTO EXPORT MODAL  [Rev 01]
+   Bulk export via JSZip with folder structure
+════════════════════════════════ */
+function PhotoExportModal({tasks,photos,onClose}){
+  const [mode,setMode]=useState(null);
+  const [exporting,setExporting]=useState(false);
+
+  useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
+
+  const rooms=useMemo(()=>{const s=new Set();tasks.forEach(t=>{if(t.attrs?.roomNumber)s.add(t.attrs.roomNumber);});return[...s].sort();},[tasks]);
+  const itemsWithPhotos=useMemo(()=>tasks.filter(t=>(t.photoIds||[]).length>0),[tasks]);
+
+  const b64toBlob=b64=>{
+    try{
+      const [h,d]=b64.split(",");
+      const mime=h.match(/:(.*?);/)?.[1]||"image/jpeg";
+      const bs=atob(d);const u=new Uint8Array(bs.length);
+      for(let i=0;i<bs.length;i++)u[i]=bs.charCodeAt(i);
+      return new Blob([u],{type:mime});
+    }catch{return null;}
+  };
+
+  const doExport=async(filterMode,filterValue)=>{
+    setExporting(true);
+    try{
+      let fp=photos;
+      if(filterMode==="room"&&filterValue)fp=photos.filter(p=>{const t=tasks.find(x=>String(x.id)===String(p.taskId));return t?.attrs?.roomNumber===filterValue;});
+      else if(filterMode==="item"&&filterValue)fp=photos.filter(p=>String(p.taskId)===String(filterValue));
+      if(!fp.length){alert("No photos found for this selection.");setExporting(false);return;}
+      const zip=new JSZip();
+      fp.forEach(p=>{
+        const t=tasks.find(x=>String(x.id)===String(p.taskId));
+        const room=t?.attrs?.roomNumber||"Unknown";
+        const blob=b64toBlob(p.data);
+        if(blob)zip.file(`Punch_Photos/${room}/${p.name}`,blob);
+      });
+      const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download=`FieldWork_Photos_${filterMode==="room"?filterValue:filterMode==="item"?`Item${filterValue}`:"All"}_${TODAY}.zip`;
+      a.click();URL.revokeObjectURL(url);
+    }catch(e){alert("Export failed: "+e.message);}
+    setExporting(false);
+  };
+
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" style={{maxWidth:500}} onClick={e=>e.stopPropagation()}>
+        <div className="m-hd"><h2 className="m-ht">📤 Export Photos</h2><button type="button" className="btn btn-g btn-ic" onClick={onClose}>✕</button></div>
+        <div className="m-bd">
+          {exporting&&<div style={{textAlign:"center",padding:"20px",color:"#2563eb",fontWeight:600}}>⏳ Building ZIP file…</div>}
+          {!exporting&&!mode&&(
+            <>
+              <div style={{fontSize:13,color:"#6b7280",marginBottom:4}}>Photos exported as <strong>.zip</strong> with folder structure:<br/><code style={{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:"#374151"}}>Punch_Photos / Room / filename.jpg</code></div>
+              <div className="export-option" onClick={()=>doExport("all")}>
+                <div className="export-opt-icon">📁</div>
+                <div className="export-opt-info"><div className="export-opt-title">Export All Photos</div><div className="export-opt-sub">{photos.length} photo{photos.length!==1?"s":""} from all rooms</div></div>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div className="export-option" onClick={()=>setMode("room")}>
+                <div className="export-opt-icon">🚪</div>
+                <div className="export-opt-info"><div className="export-opt-title">Export by Room</div><div className="export-opt-sub">Choose a specific room</div></div>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div className="export-option" onClick={()=>setMode("item")}>
+                <div className="export-opt-icon">📋</div>
+                <div className="export-opt-info"><div className="export-opt-title">Export by Punch Item</div><div className="export-opt-sub">Choose a specific item</div></div>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </>
+          )}
+          {!exporting&&mode==="room"&&(
+            <div>
+              <button type="button" className="btn btn-g" style={{marginBottom:10}} onClick={()=>setMode(null)}>← Back</button>
+              <div className="fl" style={{marginBottom:7}}>Select a room:</div>
+              <div className="export-list">
+                {rooms.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:16}}>No rooms with photos found.</div>}
+                {rooms.map(r=>{const cnt=photos.filter(p=>{const t=tasks.find(x=>String(x.id)===String(p.taskId));return t?.attrs?.roomNumber===r;}).length;return(
+                  <div key={r} className="export-list-item" onClick={()=>doExport("room",r)}>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:"#2563eb"}}>{r}</span>
+                    <span style={{fontSize:12,color:"#9ca3af"}}>{cnt} photo{cnt!==1?"s":""}</span>
+                  </div>
+                );})}
+              </div>
+            </div>
+          )}
+          {!exporting&&mode==="item"&&(
+            <div>
+              <button type="button" className="btn btn-g" style={{marginBottom:10}} onClick={()=>setMode(null)}>← Back</button>
+              <div className="fl" style={{marginBottom:7}}>Select a punch item:</div>
+              <div className="export-list">
+                {itemsWithPhotos.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:16}}>No items with photos found.</div>}
+                {itemsWithPhotos.map(t=>{const cnt=(t.photoIds||[]).length;return(
+                  <div key={t.id} className="export-list-item" onClick={()=>doExport("item",t.id)}>
+                    <div style={{flex:1,minWidth:0}}><div style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:"#2563eb",fontSize:12}}>{t.attrs?.plItemNo||`#${t.id}`}</div><div style={{fontSize:12.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div></div>
+                    <span style={{fontSize:12,color:"#9ca3af",flexShrink:0}}>{cnt} photo{cnt!==1?"s":""}</span>
+                  </div>
+                );})}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="m-ft"><button type="button" className="btn btn-s" onClick={onClose}>Close</button></div>
+      </div>
     </div>
   );
 }
@@ -657,6 +1251,7 @@ function PhotoUploadZone({onFiles,disabled=false}){
 /* ════════════════════════════════
    LOGIN PAGE
 ════════════════════════════════ */
+
 
 /* ════════════════════════════════
    INVITE LINK UTILITIES
@@ -956,51 +1551,50 @@ function LoginPage({users,onLogin}){
 /* ════════════════════════════════
    SIDEBAR
 ════════════════════════════════ */
-function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout,onEditProfile}){
-  const navItems=[
-    {id:"plans",label:"Plans",icon:"📐",section:"field"},
-    {id:"specs",label:"Specifications",icon:"📋",section:"field"},
-    {id:"tasks",label:"Tasks",icon:"✅",section:"field"},
-    {id:"photos",label:"Photos",icon:"📷",section:"field"},
-    {id:"files",label:"Files",icon:"📁",section:"field"},
-    {id:"forms",label:"Forms",icon:"📝",section:"field"},
-    {id:"models",label:"3D Models",icon:"🔷",section:"field"},
-  ];
+function Sidebar({open,activeNav,setActiveNav,counts,currentUser,onLogout,onEditProfile,onClose}){
+  const handleNav=id=>{setActiveNav(id);if(onClose)onClose();};
   return(
-    <nav className={`fw-sb${open?"":" closed"}`} aria-label="Main navigation">
-      <div className="sb-logo">
-        <div className="sb-logo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg></div>
-        <span className="sb-logo-tx">FieldWork</span>
-      </div>
-      <div className="sb-nav">
-        <div className="sb-lbl">Field Management</div>
-        {navItems.map(n=>(
-          <button key={n.id} className={`sb-item${activeNav===n.id?" act":""}`} onClick={()=>setActiveNav(n.id)}><span>{n.icon}</span>{n.label}</button>
-        ))}
-        <div className="sb-lbl" style={{marginTop:8}}>Project Management</div>
-        <button className={`sb-item${activeNav==="my-tasks"?" act":""}`} onClick={()=>setActiveNav("my-tasks")}><span>⭐</span>My Tasks<span className="sb-badge">{counts.mine}</span></button>
-        <button className={`sb-item${activeNav==="watched"?" act":""}`} onClick={()=>setActiveNav("watched")}><span>👁️</span>Watched<span className="sb-badge">{counts.watched}</span></button>
-        <button className={`sb-item${activeNav==="all"?" act":""}`} onClick={()=>setActiveNav("all")}><span>☰</span>All Tasks<span className="sb-badge">{counts.all}</span></button>
-        {can(currentUser,"manage_db")&&(
-          <>
-            <div className="sb-lbl" style={{marginTop:8}}>Admin</div>
-            <button className={`sb-item${activeNav==="database"?" act":""}`} onClick={()=>setActiveNav("database")}><span>🗃️</span>Database</button>
-            <button className={`sb-item${activeNav==="users"?" act":""}`} onClick={()=>setActiveNav("users")}><span>👥</span>Users</button>
-          </>
-        )}
-      </div>
-      <div className="sb-foot">
-        <div className="sb-user" style={{cursor:"pointer"}} onClick={onEditProfile} title="Edit profile">
-          <div className="sb-user-av" style={{background:currentUser.color}}>{currentUser.initials}</div>
-          <div className="sb-user-info"><div className="sb-user-name">{currentUser.name}</div><div className="sb-user-role">{currentUser.role}</div></div>
-          <button className="sb-logout" onClick={onLogout} title="Sign out">↩</button>
+    <>
+      <div className={`sb-overlay${open?"":" hidden"}`} onClick={onClose} aria-hidden="true"/>
+      <nav className={`fw-sb${open?"":" closed"}`} aria-label="Main navigation">
+        <div className="sb-logo">
+          <div className="sb-logo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17.5h7M17.5 14v7"/></svg></div>
+          <span className="sb-logo-tx">FieldWork</span>
+          {/* Rev 01 — revision badge in sidebar */}
+          <span className="sb-rev">{APP_REVISION}</span>
         </div>
-        <div className="sb-fbtns">
-          <button className="sb-fb" title="Settings">⚙️</button>
-          <button className="sb-fb" title="Help">❓</button>
+        <div className="sb-nav">
+          <div className="sb-lbl">Punch List</div>
+          <button className={`sb-item${activeNav==="home"?" act":""}`} onClick={()=>handleNav("home")}><span>🏠</span>Home</button>
+          <button className={`sb-item${activeNav==="rooms"?" act":""}`} onClick={()=>handleNav("rooms")}><span>🚪</span>Rooms</button>
+          <button className={`sb-item${activeNav==="photos"?" act":""}`} onClick={()=>handleNav("photos")}><span>📷</span>Photos</button>
+
+          <div className="sb-lbl" style={{marginTop:8}}>Tasks</div>
+          <button className={`sb-item${activeNav==="my-tasks"?" act":""}`} onClick={()=>handleNav("my-tasks")}><span>⭐</span>My Tasks<span className="sb-badge">{counts.mine}</span></button>
+          <button className={`sb-item${activeNav==="watched"?" act":""}`} onClick={()=>handleNav("watched")}><span>👁️</span>Watched<span className="sb-badge">{counts.watched}</span></button>
+          <button className={`sb-item${activeNav==="all"?" act":""}`} onClick={()=>handleNav("all")}><span>☰</span>All Tasks<span className="sb-badge">{counts.all}</span></button>
+
+          {can(currentUser,"manage_db")&&(
+            <>
+              <div className="sb-lbl" style={{marginTop:8}}>Admin</div>
+              <button className={`sb-item${activeNav==="database"?" act":""}`} onClick={()=>handleNav("database")}><span>🗃️</span>Database</button>
+              <button className={`sb-item${activeNav==="users"?" act":""}`} onClick={()=>handleNav("users")}><span>👥</span>Users</button>
+            </>
+          )}
         </div>
-      </div>
-    </nav>
+        <div className="sb-foot">
+          <div className="sb-user" onClick={onEditProfile} title="Edit profile" style={{cursor:"pointer"}}>
+            <div className="sb-user-av" style={{background:currentUser.color}}>{currentUser.initials}</div>
+            <div className="sb-user-info"><div className="sb-user-name">{currentUser.name}</div><div className="sb-user-role">{currentUser.role}</div></div>
+            <button type="button" className="sb-logout" onClick={e=>{e.stopPropagation();onLogout();}} title="Sign out">↩</button>
+          </div>
+          <div className="sb-fbtns">
+            <button type="button" className="sb-fb" title="Settings">⚙️</button>
+            <button type="button" className="sb-fb" title="Help">❓</button>
+          </div>
+        </div>
+      </nav>
+    </>
   );
 }
 
@@ -1011,19 +1605,28 @@ function TaskCard({task,draggingId,onDragStart,onDragEnd,onClick,onMoveClick,cur
   const late=isOverdue(task.dueDate),pri=PRI[task.priority],isDragging=draggingId===task.id;
   const person=users.find(u=>u.id===task.assignee)||{initials:task.assignee,color:"#6b7280",name:task.assignee};
   const canDrag=can(currentUser,"drag_task");
+  /* Rev 01 — punch status badge */
+  const punchStatus=(task.attrs?.punchStatus)||"Open";
+  const photoCnt=(task.photoIds||task.photos||[]).length;
   return(
     <article className={`tc${isDragging?" dragging":""}${late?" overdue":""}`}
       draggable={canDrag} onDragStart={canDrag?e=>onDragStart(e,task.id):undefined} onDragEnd={canDrag?onDragEnd:undefined}
       onClick={onClick} role="button" tabIndex={0}
       onKeyDown={e=>{if(e.key==="Enter")onClick();}}>
       {canDrag&&<span className="tc-handle" aria-hidden="true">⠿</span>}
-      <div className="tc-id">#{task.id}</div>
+      <div className="tc-id">
+        <span>#{task.id}</span>
+        {/* Rev 01 — PL Item number displayed on card */}
+        {task.attrs?.plItemNo&&<span style={{color:"#2563eb",fontWeight:700,marginLeft:4}}>{task.attrs.plItemNo}</span>}
+      </div>
       <div className="tc-title">{task.title}</div>
       {task.description&&<div className="tc-desc">{task.description}</div>}
       <div className="tc-meta">
+        {/* Rev 01 — open/closed badge */}
+        <span className={punchStatus==="Closed"?"ps-closed":"ps-open"}>{punchStatus==="Closed"?"✅":"🔴"} {punchStatus}</span>
         <span className="tc-pri" style={{color:pri.color,background:pri.bg}}>{pri.icon} {pri.label}</span>
         {task.dueDate&&<span className={`tc-due${late?" late":""}`}>{late?"⚠️":"📅"} {fmtDate(task.dueDate)}</span>}
-        {(task.photos||[]).length>0&&<span className="tc-photos-badge">📷 {task.photos.length}</span>}
+        {photoCnt>0&&<span className="tc-photos-badge">📷 {photoCnt}</span>}
         <span className="tc-av" style={{background:person.color}} title={person.name}>{person.initials}<span className="tc-av-tip">{person.name}</span></span>
       </div>
       <button className="tc-move-btn m-only" onClick={e=>{e.stopPropagation();onMoveClick(task);}}>Move to column →</button>
@@ -1110,12 +1713,28 @@ function TaskForm({mode,task,onSave,onDelete,onClose,db,users,currentUser,defaul
             <div className="fg"><label className="fl" htmlFor="fcat">Category</label><select id="fcat" className="fi" value={form.attrs.category} onChange={e=>setAttr("category",e.target.value)}><option value="">—</option>{co.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
           </div>
 
+          {/* ── REV 01: PUNCH LIST FIELDS ── */}
+          <div className="m-sec">
+            <div className="m-sec-title"><span>📋</span>Punch List Fields</div>
+            <div className="fr3">
+              <div className="fg"><label className="fl">PL Item No</label><input className="fi" value={form.attrs.plItemNo||""} onChange={e=>setAttr("plItemNo",e.target.value)} placeholder="e.g. 5062282"/></div>
+              <div className="fg"><label className="fl">Room</label><input className="fi" value={form.attrs.roomNumber||""} onChange={e=>setAttr("roomNumber",e.target.value)} placeholder="e.g. P103"/></div>
+              <div className="fg"><label className="fl">PL Cat.</label><input className="fi" value={form.attrs.plCat||""} onChange={e=>setAttr("plCat",e.target.value)} placeholder="e.g. PB"/></div>
+            </div>
+            <div className="fr2">
+              <div className="fg"><label className="fl">Tag No</label><input className="fi" value={form.attrs.tagNo||""} onChange={e=>setAttr("tagNo",e.target.value)} placeholder="e.g. P-77GA002"/></div>
+              <div className="fg"><label className="fl">Punch Status</label><select className="fi" value={form.attrs.punchStatus||"Open"} onChange={e=>setAttr("punchStatus",e.target.value)}><option value="Open">🔴 Open</option><option value="Closed">✅ Closed</option></select></div>
+            </div>
+            <div className="fg"><label className="fl">Description 1</label><input className="fi" value={form.attrs.description1||""} onChange={e=>setAttr("description1",e.target.value)} placeholder="Primary description from Excel…"/></div>
+            <div className="fg"><label className="fl">Description 2 / Remark</label><textarea className="fi" style={{minHeight:60}} value={form.attrs.description2||""} onChange={e=>setAttr("description2",e.target.value)} placeholder="Additional detail or remark…"/></div>
+            <div className="fg"><label className="fl">Notes</label><textarea className="fi" style={{minHeight:60}} value={form.attrs.notes||""} onChange={e=>setAttr("notes",e.target.value)} placeholder="Field notes, observations, follow-up actions…"/></div>
+          </div>
+
           {/* LOCATION */}
           <div className="m-sec">
             <div className="m-sec-title"><span>📍</span>Location & Plans</div>
             <div className="fr3">
               <div className="fg"><label className="fl" htmlFor="floc">Location</label><select id="floc" className="fi" value={form.attrs.location} onChange={e=>setAttr("location",e.target.value)}><option value="">—</option>{lo.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
-              <div className="fg"><label className="fl" htmlFor="frm">Room Number</label><select id="frm" className="fi" value={form.attrs.roomNumber} onChange={e=>setAttr("roomNumber",e.target.value)}><option value="">—</option>{ro.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
               <div className="fg"><label className="fl" htmlFor="fpl">Plan</label><select id="fpl" className="fi" value={form.attrs.plan} onChange={e=>setAttr("plan",e.target.value)}><option value="">—</option>{plo.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
             </div>
           </div>
@@ -1143,6 +1762,7 @@ function TaskForm({mode,task,onSave,onDelete,onClose,db,users,currentUser,defaul
               <div className="fg"><label className="fl" htmlFor="fop">Orig. Punch #</label><input id="fop" className="fi" value={form.attrs.originalPunchNmbr} onChange={e=>setAttr("originalPunchNmbr",e.target.value)} placeholder="P-2024-001"/></div>
             </div>
           </div>
+
 
           {/* PROCUREMENT */}
           <div className="m-sec">
@@ -1200,6 +1820,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
   const [t,setT]=useState(task);
   const [editTitle,setEditTitle]=useState(false);const [titleVal,setTitleVal]=useState(task.title);
   const [newCheck,setNewCheck]=useState(""); const [newMsg,setNewMsg]=useState(""); const [actOrder,setActOrder]=useState("oldest");
+  const [mobileTab,setMobileTab]=useState("details");
   const canEdit=can(currentUser,"edit_task",t);
   const save=useCallback(updates=>{const m={...t,...updates};setT(m);onUpdate(m);},[t,onUpdate]);
   const saveAttr=(k,v)=>save({attrs:{...t.attrs,[k]:v}});
@@ -1208,13 +1829,15 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
   const delCheck=id=>save({checklist:t.checklist.filter(c=>c.id!==id)});
   const addMsg=()=>{
     if(!newMsg.trim())return;
-    const e={id:Date.now(),author:currentUser.id,time:new Date().toLocaleString(),type:"comment",text:newMsg.trim()};
+    /* Rev 01 — full date+time timestamp */
+    const e={id:Date.now(),author:currentUser.id,time:nowStr(),type:"comment",text:newMsg.trim()};
     save({activity:[...(t.activity||[]),e]});setNewMsg("");
   };
   const addPhotos=async files=>{
     for(const f of files){
       const compressed=await compressImage(f._file||f);
-      const photo={id:'photo_'+Date.now()+'_'+Math.random().toString(36).slice(2),taskId:String(t.id),name:f.name,data:compressed,size:f.size,type:'image/jpeg',uploadedAt:new Date().toLocaleString(),uploadedBy:currentUser.id};
+      /* Rev 01 — full date+time on photos */
+      const photo={id:'photo_'+Date.now()+'_'+Math.random().toString(36).slice(2),taskId:String(t.id),name:f.name,data:compressed,size:f.size,type:'image/jpeg',uploadedAt:nowStr(),uploadedBy:currentUser.id};
       const fs=getFS();
       if(fs){
         await fs.collection('photos').doc(photo.id).set(photo);
@@ -1257,6 +1880,11 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
     {label:"Supplier",icon:"📦",type:"sel",key:"supplier",opts:suo},
     {label:"PO Description",icon:"📎",type:"text",key:"poDescription"},
     {label:"Resp. Contractor",icon:"🏗️",type:"sel",key:"responsibleContractor",opts:cno},
+    /* Rev 01 — punch list fields */
+    {label:"PL Item No",icon:"📋",type:"text",key:"plItemNo"},
+    {label:"Room",icon:"🚪",type:"text",key:"roomNumber"},
+    {label:"PL Cat.",icon:"🏷️",type:"text",key:"plCat"},
+    {label:"Tag No",icon:"🔖",type:"text",key:"tagNo"},
   ];
 
   return(
@@ -1264,15 +1892,45 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
       <div className="td-panel" onClick={e=>e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="td-hd">
           <div className="td-hd-av" style={{background:person.color}}>{person.initials}</div>
-          <span className="td-hd-meta">#{t.id} | @{t.assignee}</span>
+          <span className="td-hd-meta">#{t.id}{t.attrs?.plItemNo?` | ${t.attrs.plItemNo}`:""} | @{t.assignee}</span>
           {!canEdit&&<span style={{marginLeft:8,fontSize:11.5,color:"#d97706",background:"#fffbeb",border:"1px solid #fde68a",padding:"2px 8px",borderRadius:6}}>👁️ View Only</span>}
           <div style={{marginLeft:"auto",display:"flex",gap:6}}>
             {can(currentUser,"delete_task")&&<button className="btn btn-del" onClick={()=>{if(window.confirm("Delete?"))onDelete();}}>🗑</button>}
             <button className="btn btn-g btn-ic" onClick={onClose}>✕</button>
           </div>
         </div>
+
+        {/* Rev 01 — Mark as Closed / Open action bar */}
+        {(canEdit||can(currentUser,"close_task",t))&&(
+          <div className="punch-action-bar">
+            <span style={{fontSize:12,fontWeight:700,color:"#6b7280",marginRight:4}}>Punch Status:</span>
+            <span className={(t.attrs?.punchStatus||"Open")==="Closed"?"ps-closed":"ps-open"} style={{fontSize:12}}>
+              {(t.attrs?.punchStatus||"Open")==="Closed"?"✅ Closed":"🔴 Open"}
+            </span>
+            <div style={{marginLeft:"auto",display:"flex",gap:7}}>
+              {(t.attrs?.punchStatus||"Open")!=="Closed"&&(
+                <button type="button" className="btn-close-item" onClick={()=>{saveAttr("punchStatus","Closed");const act=[...(t.activity||[]),{id:Date.now(),author:currentUser.id,time:nowStr(),type:"status",text:"Marked as Closed ✅"}];save({attrs:{...t.attrs,punchStatus:"Closed"},activity:act});}}>
+                  ✅ Mark as Closed
+                </button>
+              )}
+              {(t.attrs?.punchStatus||"Open")==="Closed"&&(
+                <button type="button" className="btn-open-item" onClick={()=>{const act=[...(t.activity||[]),{id:Date.now(),author:currentUser.id,time:nowStr(),type:"status",text:"Re-opened 🔴"}];save({attrs:{...t.attrs,punchStatus:"Open"},activity:act});}}>
+                  🔴 Re-open Item
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile tab switcher for attributes */}
+        <div className="m-only" style={{display:"flex",background:"#f3f4f6",borderBottom:"1px solid #eaecf0",flexShrink:0}}>
+          {[["details","📋 Details"],["attrs","⚙️ Attributes"]].map(([t,l])=>(
+            <button key={t} style={{flex:1,padding:"10px",fontSize:13,fontWeight:600,border:"none",background:mobileTab===t?"#fff":"transparent",color:mobileTab===t?"#1a1d23":"#9ca3af",cursor:"pointer",fontFamily:"'Figtree',sans-serif",borderBottom:mobileTab===t?"2px solid #2563eb":"2px solid transparent",transition:"all .15s"}} onClick={()=>setMobileTab(t)}>{l}</button>
+          ))}
+        </div>
         <div className="td-body">
-          {/* LEFT */}
+          {/* LEFT — hidden on mobile when showing attrs tab */}
+          <div style={typeof window!=="undefined"&&window.innerWidth<768&&mobileTab==="attrs"?{display:"none"}:{}}>
           <div className="td-left">
             <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
               {editTitle&&canEdit?(
@@ -1282,6 +1940,21 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
               )}
             </div>
             {t.description&&<p style={{fontSize:13.5,color:"#7c8494",lineHeight:1.6}}>{t.description}</p>}
+
+            {/* Rev 01 — Description 1 & 2, Notes section */}
+            {(t.attrs?.description1||t.attrs?.description2||t.attrs?.notes)&&(
+              <div className="td-section">
+                {t.attrs?.description1&&<div style={{fontSize:13,color:"#374151"}}><span style={{fontWeight:700,fontSize:11,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:3}}>Description 1</span>{t.attrs.description1}</div>}
+                {t.attrs?.description2&&<div style={{fontSize:13,color:"#374151",marginTop:8}}><span style={{fontWeight:700,fontSize:11,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:3}}>Description 2 / Remark</span>{t.attrs.description2}</div>}
+                {t.attrs?.notes&&<div style={{fontSize:13,color:"#374151",marginTop:8}}><span style={{fontWeight:700,fontSize:11,color:"#9ca3af",textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:3}}>Notes</span>{t.attrs.notes}</div>}
+              </div>
+            )}
+            {canEdit&&(
+              <div className="td-section">
+                <div className="td-sec-hd"><span className="td-sec-title">📝 Notes</span></div>
+                <textarea className="fi" style={{fontSize:13,minHeight:60}} placeholder="Field notes, observations, follow-up…" value={t.attrs?.notes||""} onChange={e=>saveAttr("notes",e.target.value)}/>
+              </div>
+            )}
 
             {/* CHECKLIST */}
             <div className="td-section">
@@ -1299,10 +1972,10 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
               {canEdit&&<div style={{display:"flex",gap:6,marginTop:4}}><input className="fi" style={{fontSize:13}} placeholder="New checklist item…" value={newCheck} onChange={e=>setNewCheck(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addCheck();}}/><button className="btn btn-s" onClick={addCheck}>Add</button></div>}
             </div>
 
-            {/* PHOTOS */}
+            {/* PHOTOS — Rev 01: camera button added */}
             <div className="td-section">
               <div className="td-sec-hd"><span className="td-sec-title">📷 Photos ({photos.length})</span></div>
-              {can(currentUser,"upload_photo")&&<PhotoUploadZone onFiles={addPhotos} disabled={false}/>}
+              {can(currentUser,"upload_photo")&&<PhotoUploadZone onFiles={addPhotos} disabled={false} showCamera={true}/>}
               {photos.length>0&&(
                 <div className="photo-thumbs">
                   {photos.map(p=>(
@@ -1338,8 +2011,9 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
             </div>
           </div>
 
-          {/* RIGHT — ATTRIBUTES */}
-          <div className="td-right">
+          </div>{/* end left panel conditional */}
+          {/* RIGHT — ATTRIBUTES (also shown as mobile tab) */}
+          <div className={`td-right${typeof window!=="undefined"&&window.innerWidth<768?" m-only":""}`} style={typeof window!=="undefined"&&window.innerWidth<768&&mobileTab!=="attrs"?{display:"none"}:{}}>
             <div className="td-attr-hd"><span className="td-attr-title">Task Attributes</span><button style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:16}} onClick={onClose}>×</button></div>
             <div className="td-attr-body">
               {ATTRS.map(row=>{
@@ -1855,9 +2529,10 @@ function PunchReportModal({tasks, users, currentUser, onClose, onOpenTask}){
   useEffect(()=>{const esc=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);},[onClose]);
 
   /* Punch items: tasks where attrs.punchItem === "Yes" */
-  const allPunch=useMemo(()=>tasks.filter(t=>(t.attrs?.punchItem||"").toLowerCase()==="yes"),[tasks]);
-  const openPunch=useMemo(()=>allPunch.filter(t=>t.column!=="approved"),[allPunch]);
-  const closedPunch=useMemo(()=>allPunch.filter(t=>t.column==="approved"),[allPunch]);
+  /* Rev 01 — allPunch includes items with plItemNo OR punchItem=Yes; open/closed uses attrs.punchStatus */
+  const allPunch=useMemo(()=>tasks.filter(t=>(t.attrs?.punchItem||"").toLowerCase()==="yes"||t.attrs?.plItemNo),[tasks]);
+  const openPunch=useMemo(()=>allPunch.filter(t=>(t.attrs?.punchStatus||"Open")!=="Closed"),[allPunch]);
+  const closedPunch=useMemo(()=>allPunch.filter(t=>t.attrs?.punchStatus==="Closed"),[allPunch]);
   const overduePunch=useMemo(()=>openPunch.filter(t=>isOverdue(t.dueDate)),[openPunch]);
   const highPunch=useMemo(()=>openPunch.filter(t=>t.priority==="high"),[openPunch]);
 
@@ -2391,6 +3066,8 @@ function FilterPanel({filters,addFilter,removeFilter,clearFilters,onClose,column
           <div><div className="fp-sl">Assignee</div>{users.filter(u=>u.status==="active").map(p=>opt("assignee",p.id,p.name,p.color))}</div>
           <div><div className="fp-sl">Status</div>{columns.map(c=>opt("column",c.id,c.label,COL_COLORS[c.id]))}</div>
           <div><div className="fp-sl">Due Date</div>{opt("overdue","true","⚠️ Overdue only")}</div>
+          {/* Rev 01 — punch status filter */}
+          <div><div className="fp-sl">Punch Status</div>{opt("punchStatus","Open","🔴 Open","#ea580c")}{opt("punchStatus","Closed","✅ Closed","#16a34a")}</div>
         </div>
         <div className="fp-ft"><button className="btn btn-s" style={{flex:1}} onClick={clearFilters}>Clear all</button><button className="btn btn-p" style={{flex:1}} onClick={onClose}>Apply</button></div>
       </aside>
@@ -2401,7 +3078,6 @@ function FilterPanel({filters,addFilter,removeFilter,clearFilters,onClose,column
 /* ════════════════════════════════
    MAIN APP  — Firebase Firestore
 ════════════════════════════════ */
-const LS_NEXTID='fw_nextId';
 
 function App(){
   /* ── Firebase / config state ── */
@@ -2427,7 +3103,7 @@ function App(){
   /* ── UI state ── */
   const [view,setView]=useState("board");
   const [sidebarOpen,setSidebarOpen]=useState(true);
-  const [activeNav,setActiveNav]=useState("my-tasks");
+  const [activeNav,setActiveNav]=useState("home");
   const [filters,setFilters]=useState({});
   const [sort,setSort]=useState({field:"id",dir:"asc"});
   const [search,setSearch]=useState("");
@@ -2446,6 +3122,10 @@ function App(){
   const [showProfile,setShowProfile]=useState(false);
   const [showPunchReport,setShowPunchReport]=useState(false);
   const [welcomeUser,setWelcomeUser]=useState(null);
+  /* Rev 01 — new state */
+  const [showXlsxImport,setShowXlsxImport]=useState(false);
+  const [showPhotoExport,setShowPhotoExport]=useState(false);
+  const [roomFilter,setRoomFilter]=useState(null);
   const sortMenuRef=useRef();
   const undoTimerRef=useRef();
   const importRef=useRef();
@@ -2655,19 +3335,14 @@ function App(){
      FULL DATA RESET  (Admin only)
   ════════════════════════════════ */
   const handleReset=async()=>{
-    if(!window.confirm("Reset ALL Firestore data to demo state?\nThis is permanent and affects ALL users.")) return;
+    if(!window.confirm("Clear ALL Firestore tasks and photos?\nUsers are kept. This is permanent and affects ALL users.")) return;
     const fs=getFS();if(!fs)return;
     try{
       const deleteCol=async col=>{const s=await fs.collection(col).get();const b=fs.batch();s.docs.forEach(d=>b.delete(d.ref));await b.commit();};
+      /* Rev 01 — reset to empty, no seed data */
       await deleteCol('tasks');await deleteCol('photos');
-      const uSnap=await fs.collection('users').get();
-      const b=fs.batch();
-      uSnap.docs.forEach(d=>b.delete(d.ref));
-      INIT_USERS.forEach(u=>b.set(fs.collection('users').doc(u.id),u));
-      await b.commit();
-      await fs.doc('db/main').set(INIT_DB);
-      _nextId=1065;lsSet(LS_NEXTID,1065);
-      setCurrentUser(null);
+      _nextId=1001;lsSet(LS_NEXTID,1001);
+      setActiveNav("home");
     }catch(e){alert('Reset failed: '+e.message);}
   };
 
@@ -2679,14 +3354,17 @@ function App(){
     let res=[...tasks];
     if(activeNav==="my-tasks")res=res.filter(t=>t.assignee===currentUser?.id);
     else if(activeNav==="watched")res=res.filter(t=>(t.watchers||[]).includes(currentUser?.id));
-    if(search){const q=search.toLowerCase();res=res.filter(t=>t.title.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q)||String(t.id).includes(q));}
+    if(search){const q=search.toLowerCase();res=res.filter(t=>t.title.toLowerCase().includes(q)||t.description?.toLowerCase().includes(q)||String(t.id).includes(q)||(t.attrs?.plItemNo||"").toLowerCase().includes(q)||(t.attrs?.description1||"").toLowerCase().includes(q));}
     if(filters.assignee)res=res.filter(t=>t.assignee===filters.assignee);
     if(filters.priority)res=res.filter(t=>t.priority===filters.priority);
     if(filters.column)res=res.filter(t=>t.column===filters.column);
     if(filters.overdue)res=res.filter(t=>isOverdue(t.dueDate));
+    /* Rev 01 — punchStatus filter and room filter */
+    if(filters.punchStatus)res=res.filter(t=>(t.attrs?.punchStatus||"Open")===filters.punchStatus);
+    if(roomFilter)res=res.filter(t=>t.attrs?.roomNumber===roomFilter);
     res.sort((a,b)=>{let av,bv;switch(sort.field){case"id":av=a.id;bv=b.id;break;case"title":av=a.title;bv=b.title;break;case"dueDate":av=a.dueDate||"9999";bv=b.dueDate||"9999";break;case"priority":{const p={high:0,medium:1,low:2};av=p[a.priority];bv=p[b.priority];break;}default:av=a.assignee;bv=b.assignee;}return sort.dir==="asc"?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);});
     return res;
-  },[tasks,activeNav,search,filters,sort,currentUser]);
+  },[tasks,activeNav,search,filters,sort,currentUser,roomFilter]);
 
   const tasksByColumn=useMemo(()=>{const m={};COLUMNS.forEach(c=>{m[c.id]=[]});filteredTasks.forEach(t=>{if(m[t.column])m[t.column].push(t)});return m;},[filteredTasks]);
   const visibleColumns=useMemo(()=>showEmptyColumns?COLUMNS:COLUMNS.filter(c=>(tasksByColumn[c.id]?.length||0)>0),[showEmptyColumns,tasksByColumn]);
@@ -2733,10 +3411,53 @@ function App(){
     reader.readAsText(file);e.target.value="";
   };
 
-  const filterChipLabel=(k,v)=>{if(k==="assignee"){const p=users.find(x=>x.id===v);return`Assignee: ${p?.name||v}`;}if(k==="priority")return`Priority: ${PRI[v]?.label||v}`;if(k==="column")return`Status: ${COLUMNS.find(c=>c.id===v)?.label||v}`;if(k==="overdue")return"Overdue only";return`${k}: ${v}`;};
+  const filterChipLabel=(k,v)=>{if(k==="assignee"){const p=users.find(x=>x.id===v);return`Assignee: ${p?.name||v}`;}if(k==="priority")return`Priority: ${PRI[v]?.label||v}`;if(k==="column")return`Status: ${COLUMNS.find(c=>c.id===v)?.label||v}`;if(k==="overdue")return"Overdue only";if(k==="punchStatus")return`Punch: ${v}`;return`${k}: ${v}`;};
 
-  const NAV_LABELS={"my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","plans":"Plans","specs":"Specifications","tasks":"Tasks","photos":"Photos","files":"Files","forms":"Forms","models":"3D Models","database":"Database","users":"Users"};
-  const isSpecialPage=["database","users","photos"].includes(activeNav);
+  /* Rev 01 — XLSX smart import: match on plItemNo, preserve photos+punchStatus */
+  const handleXlsxImport=useCallback(async(rows,results)=>{
+    const fs=getFS();if(!fs){alert("Firebase not connected.");return;}
+    const added=[],updated=[],unchanged=[];
+    const batch=fs.batch();
+    for(const row of rows){
+      const existing=tasks.find(t=>t.attrs?.plItemNo&&String(t.attrs.plItemNo)===String(row.plItemNo));
+      if(existing){
+        const changed=existing.attrs?.description1!==row.description1||
+          existing.attrs?.tagNo!==row.tagNo||existing.attrs?.description2!==row.description2||
+          existing.attrs?.plCat!==row.plCat||existing.attrs?.roomNumber!==row.room;
+        if(changed){
+          const ut={...existing,attrs:{...existing.attrs,
+            description1:row.description1||existing.attrs.description1||"",
+            tagNo:row.tagNo||existing.attrs.tagNo||"",
+            description2:row.description2||existing.attrs.description2||"",
+            plCat:row.plCat||existing.attrs.plCat||"",
+            roomNumber:row.room||existing.attrs.roomNumber||"",
+            /* PRESERVE punchStatus, notes, photos — never overwrite from import */
+          }};
+          batch.set(fs.collection('tasks').doc(String(existing.id)),ut);
+          updated.push(ut);
+        }else{unchanged.push(existing);}
+      }else{
+        const id=genId();
+        const nt={id,title:row.description1||row.plItemNo||"Imported Item",
+          description:"",column:COLUMNS[0].id,assignee:currentUser.id,
+          priority:"medium",dueDate:"",createdAt:TODAY,watchers:[],photoIds:[],
+          attrs:mkAttrs({plItemNo:row.plItemNo||"",description1:row.description1||"",
+            tagNo:row.tagNo||"",description2:row.description2||"",plCat:row.plCat||"",
+            roomNumber:row.room||"",originalStatus:row.status||"Open",punchStatus:"Open"}),
+          checklist:[],relatedTasks:[],activity:[]};
+        batch.set(fs.collection('tasks').doc(String(id)),nt);
+        added.push(nt);
+      }
+    }
+    await batch.commit();
+    lsSet(LS_NEXTID,_nextId);
+    results.added.push(...added);
+    results.updated.push(...updated);
+    results.unchanged.push(...unchanged);
+  },[tasks,currentUser]);
+
+  const NAV_LABELS={"home":"Home","rooms":"Rooms","my-tasks":"My Tasks","watched":"Watched Tasks","all":"All Tasks","photos":"Photos","database":"Database","users":"Users"};
+  const isSpecialPage=["database","users","photos","home","rooms"].includes(activeNav);
 
   /* Show setup screen if Firebase not configured */
   if(!fbConfig) return <SetupScreen onSave={cfg=>{setFbConfig(cfg);lsSet(LS_FB_CONFIG,cfg);}}/>;
@@ -2762,7 +3483,7 @@ function App(){
   return(
     <>
       <div className="fw-app">
-        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>{lsSet(LS_SESSION_UID,null);setCurrentUser(null);}} onEditProfile={()=>setShowProfile(true)}/>
+        <Sidebar open={sidebarOpen} activeNav={activeNav} setActiveNav={setActiveNav} counts={counts} currentUser={currentUser} onLogout={()=>{lsSet(LS_SESSION_UID,null);setCurrentUser(null);}} onEditProfile={()=>setShowProfile(true)} onClose={()=>setSidebarOpen(false)}/>
         <main className="fw-main">
           {/* TOP BAR */}
           <header className="fw-tb">
@@ -2770,9 +3491,9 @@ function App(){
               <button className="hmbgr" onClick={()=>setSidebarOpen(s=>!s)} aria-label="Toggle sidebar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <nav className="bc">
-                <span>Business Plan</span><span className="bc-s">›</span>
-                <span>{isSpecialPage?"Settings":"Tasks"}</span><span className="bc-s">›</span>
+              <nav className="bc" aria-label="Breadcrumb">
+                <span className="d-only">Business Plan</span><span className="bc-s d-only">›</span>
+                <span className="d-only">{isSpecialPage?"Settings":"Tasks"}</span><span className="bc-s d-only">›</span>
                 <span className="bc-c">{NAV_LABELS[activeNav]||activeNav}</span>
               </nav>
             </div>
@@ -2784,7 +3505,7 @@ function App(){
                   <button className="btn btn-s" onClick={()=>setShowSortMenu(s=>!s)}>↕ <span className="d-only">{sortLabel} {sort.dir==="asc"?"↑":"↓"}</span></button>
                   {showSortMenu&&<div className="sort-menu">{SORT_OPTIONS.map(o=><div key={o.field} className={`so${sort.field===o.field?" act":""}`} onClick={()=>toggleSort(o.field)} tabIndex={0} onKeyDown={e=>{if(e.key==="Enter")toggleSort(o.field);}}>{o.label}{sort.field===o.field&&<span>{sort.dir==="asc"?"↑":"↓"}</span>}</div>)}</div>}
                 </div>
-                <button className="btn btn-s" onClick={()=>setShowFilterPanel(true)}>⊞ <span className="d-only">Filters</span>{activeFilterCount>0&&<span className="fbadge">{activeFilterCount}</span>}</button>
+                <button className="btn btn-s" onClick={()=>setShowFilterPanel(true)} aria-label="Filters">⊞ <span className="d-only">Filters</span>{activeFilterCount>0&&<span className="fbadge">{activeFilterCount}</span>}</button>
                 <div className="vt d-only">{[["board","⊞ Board"],["list","≡ List"],["calendar","📅 Cal"]].map(([v,l])=><button key={v} className={`vt-b${view===v?" act":""}`} onClick={()=>setView(v)}>{l}</button>)}</div>
                 {view==="board"&&<button className="btn btn-g d-only" onClick={()=>setShowEmptyColumns(s=>!s)} title={showEmptyColumns?"Hide empty":"Show empty"}>{showEmptyColumns?"⊡":"⊞"}</button>}
                 {can(currentUser,"create_task")&&<><input ref={importRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleImportTasks}/><button className="btn btn-g btn-ic d-only" onClick={()=>importRef.current?.click()} title="Import tasks CSV">⬆</button></>}
@@ -2798,6 +3519,14 @@ function App(){
           </header>
 
           {/* SPECIAL PAGES */}
+          {/* Rev 01 — Home Screen */}
+          {activeNav==="home"&&<HomeScreen tasks={tasks} photos={photos} currentUser={currentUser}
+            onNavigate={(nav,f)=>{setActiveNav(nav);if(f?.punchStatus)addFilter("punchStatus",f.punchStatus);if(f?.search)setSearch(f.search);}}
+            onImportXlsx={()=>setShowXlsxImport(true)}
+            onExportPhotos={()=>setShowPhotoExport(true)}
+            onPunchReport={()=>setShowPunchReport(true)}/>}
+          {/* Rev 01 — Room List Screen */}
+          {activeNav==="rooms"&&<RoomListScreen tasks={tasks} onRoomSelect={room=>{setRoomFilter(room);setActiveNav("all");}}/>}
           {activeNav==="database"&&(can(currentUser,"manage_db")?<DatabasePage db={db} setDb={fsUpdateDb} tasks={tasks} onTaskClick={setDetailTask} users={users}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>Database management is available to Admins only.</p></div>)}
           {activeNav==="users"&&(can(currentUser,"manage_users")?<UsersPage users={users} onCreateUser={fsCreateUser} onUpdateUser={fsUpdateUser} onDeleteUser={fsDeleteUser} currentUser={currentUser}/>:<div className="access-denied"><div className="access-denied-icon">🔒</div><h2>Access Restricted</h2><p>User management is available to Admins only.</p></div>)}
           {activeNav==="photos"&&<PhotosPage tasks={tasks} photos={photos} onTaskClick={setDetailTask} currentUser={currentUser} onDeletePhoto={fsDeletePhoto}/>}
@@ -2810,23 +3539,51 @@ function App(){
               <span className="leg-item" style={{marginLeft:6}}><span style={{width:3,height:14,background:"#ef4444",borderRadius:2,display:"inline-block",marginRight:3}}/>Overdue</span>
             </div>
             <div className="fw-fb">
-              <div className="tb-srch m-only" style={{flex:1,maxWidth:"100%",marginRight:4}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…" type="search"/></div>
+              <div className="tb-srch m-only" style={{flex:1,maxWidth:"100%",marginRight:4}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search tasks…" type="search" style={{fontSize:16}}/></div>
               {Object.entries(filters).map(([k,v])=><span key={k} className="f-chip">{filterChipLabel(k,v)}<button className="f-chip-x" onClick={()=>removeFilter(k)}>×</button></span>)}
+              {roomFilter&&<span className="f-chip">🚪 Room: {roomFilter}<button className="f-chip-x" onClick={()=>setRoomFilter(null)}>×</button></span>}
               {search&&<span className="f-chip">"{search}"<button className="f-chip-x" onClick={()=>setSearch("")}>×</button></span>}
               {activeFilterCount>1&&<button className="clear-all" onClick={()=>{clearFilters();setSearch("");}}>Clear all</button>}
               <span className="stat-info">{filteredTasks.length}/{tasks.length} tasks</span>
             </div>
-            {view==="board"&&<div className="mob-cs m-only">{visibleColumns.map(col=>{const cnt=tasksByColumn[col.id]?.length||0,color=COL_COLORS[col.id]||"#6b7280",active=mobileCol===col.id;return<button key={col.id} className="mob-pill" onClick={()=>setMobileCol(col.id)} style={{borderColor:color,background:active?color:"#fff",color:active?"#fff":color}}>{col.label} ({cnt})</button>;})}</div>}
-            <div className="m-only" style={{display:"flex",gap:6,padding:"8px 12px",background:"#fff",borderBottom:"1px solid #eaecf0",flexShrink:0,flexWrap:"wrap"}}>
-              {[["board","⊞","Board"],["list","≡","List"],["calendar","📅","Cal"]].map(([v,ic,lbl])=><button key={v} className={`btn${view===v?" btn-p":" btn-s"}`} style={{flex:1,justifyContent:"center"}} onClick={()=>setView(v)}>{ic} {lbl}</button>)}
-              {can(currentUser,"create_task")&&<button className="btn btn-s" style={{flex:"1 0 100%",justifyContent:"center"}} onClick={()=>setShowPunchReport(true)}>📋 Punch Report</button>}
-            </div>
+            {view==="board"&&<div className="mob-cs m-only" role="tablist" aria-label="Column">{visibleColumns.map(col=>{const cnt=tasksByColumn[col.id]?.length||0,color=COL_COLORS[col.id]||"#6b7280",active=mobileCol===col.id;return<button key={col.id} className="mob-pill" role="tab" aria-selected={active} onClick={()=>setMobileCol(col.id)} style={{borderColor:color,background:active?color:"#fff",color:active?"#fff":color,minHeight:38}}><span style={{fontWeight:700}}>{col.label}</span><span style={{marginLeft:5,opacity:.7,fontWeight:400,fontSize:11}}>({cnt})</span></button>;})}</div>}
+
             {view==="board"&&<BoardView columns={visibleColumns} tasksByColumn={tasksByColumn} draggingId={draggingId} dragOverCol={dragOverCol} mobileCol={mobileCol} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onTaskClick={setDetailTask} onAddTask={colId=>can(currentUser,"create_task")&&setTaskModal({mode:"create",task:{},defaultColumn:colId})} onMoveTask={moveTask} currentUser={currentUser} users={users}/>}
             {view==="list"&&<ListView tasks={filteredTasks} sort={sort} toggleSort={toggleSort} onTaskClick={setDetailTask} users={users}/>}
             {view==="calendar"&&<CalendarView tasks={filteredTasks} calMonth={calMonth} setCalMonth={setCalMonth} onTaskClick={setDetailTask}/>}
           </>}
         </main>
       </div>
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <nav className="mob-bottom-nav" aria-label="Mobile navigation">
+        <div className="mob-nav-bar">
+          {[
+            {id:"home",label:"Home",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>},
+            {id:"rooms",label:"Rooms",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="12" width="6" height="9"/></svg>},
+            {id:"all",label:"All",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>},
+            {id:"photos",label:"Photos",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>},
+            {id:"__menu",label:"Menu",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>},
+          ].map(item=>(
+            <button key={item.id} className={`mob-nav-btn${activeNav===item.id?" act":""}`}
+              onClick={()=>{
+                if(item.id==="__menu"){setSidebarOpen(s=>!s);}
+                else{setActiveNav(item.id);}
+              }}>
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* ── MOBILE FAB ── */}
+      {can(currentUser,"create_task")&&(
+        <button className="mob-fab" aria-label="New task"
+          onClick={()=>setTaskModal({mode:"create",task:{},defaultColumn:COLUMNS[0].id})}>
+          ＋
+        </button>
+      )}
 
       {/* TASK DETAIL PANEL */}
       {detailTask&&<TaskDetailPanel task={detailTask} onClose={()=>setDetailTask(null)} onUpdate={updateTask} onDelete={()=>deleteTask(detailTask.id)} tasks={tasks} db={db} users={users} currentUser={currentUser} photos={photos.filter(p=>p.taskId===String(detailTask.id))} onDeletePhoto={(pid)=>fsDeletePhoto(pid,detailTask.id)}/>}
@@ -2845,6 +3602,12 @@ function App(){
 
       {/* PUNCH REPORT MODAL */}
       {showPunchReport&&<PunchReportModal tasks={tasks} users={users} currentUser={currentUser} onClose={()=>setShowPunchReport(false)} onOpenTask={t=>{setDetailTask(t);setShowPunchReport(false);}}/>}
+
+      {/* Rev 01 — XLSX IMPORT MODAL */}
+      {showXlsxImport&&<XlsxImportModal tasks={tasks} onImport={handleXlsxImport} onClose={()=>setShowXlsxImport(false)}/>}
+
+      {/* Rev 01 — PHOTO EXPORT MODAL */}
+      {showPhotoExport&&<PhotoExportModal tasks={tasks} photos={photos} onClose={()=>setShowPhotoExport(false)}/>}
     </>
   );
 }
