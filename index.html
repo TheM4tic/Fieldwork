@@ -2,29 +2,38 @@
 <!--
 ════════════════════════════════════════════════════════════════
   FieldWork — Punch List Manager
-  File    : index_rev02.html
-  Based on: index_rev01.html
-  Revision: 02  |  Date: 2026-03-12
+  File    : index_rev03.html
+  Based on: index_rev02.html
+  Revision: 03  |  Date: 2026-03-12
 
-  CHANGES FROM index_rev01.html:
+  CHANGES FROM index_rev02.html:
   ────────────────────────────────────────────────────────────
-  [NEW] Projects system — admin creates projects, assigns members
-  [NEW] Project Select Screen — shown after login, always visible
-  [NEW] Projects Page (admin only) — create/edit/delete projects,
-        manage member list per project
-  [NEW] Project switcher in top bar — shows active project,
-        click to return to project selector
-  [NEW] All tasks scoped to active project (projectId field)
-  [NEW] Excel import tags all new rows with active projectId
-  [NEW] Home screen stats scoped to active project only
-  [NEW] Members-only visibility — users only see projects they
-        are assigned to by an admin
-  [KEEP] All Rev 01 features unchanged
+  [NEW] Responsive layout — desktop vs mobile adaptive UI
+  [NEW] useIsMobile() hook — replaces static window.innerWidth
+        checks; TaskDetailPanel and BoardView now update live
+        on window resize
+  [NEW] Desktop CSS block (@media ≥768px):
+        · Home: wider hero, 5-stat strip, 4-col action grid
+        · Rooms: auto-fill card grid (≥320px per card)
+        · Sidebar: 240px wide
+        · Board: 280px columns, generous padding
+        · Task detail: both panels always side-by-side
+        · Photos: larger auto-fill grid
+        · Modals: full border-radius (not bottom-sheet)
+        · Punch modal: wider (860px)
+        · All pages: max-width 1400px centred containers
+  [NEW] HomeScreen: 5th stat card (My Items + Overdue)
+  [NEW] HomeScreen: home-hero-inner wrapper for desktop centering
+  [NEW] RoomListScreen: room-items-grid wrapper for CSS grid
+  [KEEP] All mobile behaviour unchanged — mobile media query
+         overrides the desktop baseline as before
+  [KEEP] All Rev 01 + Rev 02 features unchanged
 ════════════════════════════════════════════════════════════════
   REVISION HISTORY
   ────────────────────────────────────────────────────────────
   Rev 01  2026-03-12  Initial punch list upgrade from index_13_
   Rev 02  2026-03-12  Projects system with member access control
+  Rev 03  2026-03-12  Responsive desktop/mobile adaptive layout
 ════════════════════════════════════════════════════════════════
 -->
 <html lang="en">
@@ -40,7 +49,7 @@
 <meta property="og:title" content="FieldWork — Punch List Manager Rev 01"/>
 <meta property="og:description" content="Punch list management with photo evidence for field engineering."/>
 <meta property="og:type" content="website"/>
-<title>FieldWork — Punch List Manager (Rev 02)</title>
+<title>FieldWork — Punch List Manager (Rev 03)</title>
 <!-- Favicon via SVG data URI -->
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22FieldWork%22%2C%22short_name%22%3A%22FieldWork%22%2C%22description%22%3A%22Field%20engineering%20task%20management%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230e1118%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22orientation%22%3A%22any%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20192%20192'%3E%3Crect%20width%3D'192'%20height%3D'192'%20rx%3D'40'%20fill%3D'%232563eb'%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='38' fill='%232563eb'/><rect x='28' y='28' width='46' height='46' rx='8' fill='white'/><rect x='106' y='28' width='46' height='46' rx='8' fill='white'/><rect x='28' y='106' width='46' height='46' rx='8' fill='white'/><line x1='106' y1='129' x2='152' y2='129' stroke='white' stroke-width='9' stroke-linecap='round'/><line x1='129' y1='106' x2='129' y2='152' stroke='white' stroke-width='9' stroke-linecap='round'/></svg>"/>
@@ -485,6 +494,117 @@ textarea.fi{resize:vertical;min-height:80px;}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 @media(min-width:768px){.m-only{display:none!important;}}
 
+/* ══════════════════════════════════════
+   DESKTOP OPTIMISATIONS  (≥768px)
+   Mobile behaviour is unchanged —
+   these rules layer on top of the
+   desktop-first baseline CSS.
+══════════════════════════════════════ */
+@media(min-width:768px){
+
+  /* ── Sidebar — slightly wider, always visible ── */
+  .fw-sb{width:240px;min-width:240px;}
+  .fw-sb.closed{width:0;min-width:0;}
+
+  /* ── Top bar ── */
+  .fw-tb{padding:0 28px;gap:12px;}
+
+  /* ── Content pages — max-width + generous padding ── */
+  .home-screen,.room-list-screen,.photos-page,.db-page,.users-page,.projects-page{
+    overflow-y:auto;
+  }
+
+  /* ── Home Screen ── */
+  .home-hero{padding:40px 48px 36px;}
+  .home-hero-inner{max-width:1400px;margin:0 auto;}
+  .home-title{font-size:30px;}
+  .home-date{font-size:14px;margin-bottom:20px;}
+  .home-search{max-width:560px;}
+  .home-stats{
+    grid-template-columns:repeat(5,1fr);
+    padding:24px 48px 12px;
+    max-width:1400px;
+    margin:0 auto;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .home-stat{padding:18px 14px;}
+  .home-stat-num{font-size:32px;}
+  .home-stat-lbl{font-size:12px;}
+  .home-grid{
+    grid-template-columns:repeat(4,1fr);
+    padding:12px 48px 40px;
+    max-width:1400px;
+    margin:0 auto;
+    width:100%;
+    box-sizing:border-box;
+    gap:14px;
+  }
+  .home-btn{min-height:110px;padding:20px 18px;border-radius:16px;}
+  .home-btn-icon{font-size:26px;}
+  .home-btn-label{font-size:15px;}
+  .home-btn-sub{font-size:12px;}
+  .home-empty{padding:40px 48px;}
+
+  /* ── Room List — card grid on desktop ── */
+  .room-list-screen{padding:28px 48px;max-width:1400px;margin:0 auto;width:100%;box-sizing:border-box;}
+  .room-list-hd{margin-bottom:20px;}
+  .room-items-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:10px;
+  }
+  .room-item{margin-bottom:0;}
+
+  /* ── Board ── */
+  .fw-board{padding:16px 24px;gap:12px;}
+  .fw-col{width:280px;}
+
+  /* ── Task detail panel — always show both columns ── */
+  .td-panel{max-width:1100px;}
+  .td-right{display:flex!important;} /* always visible on desktop — overrides m-only */
+
+  /* ── Modals — more width on desktop ── */
+  .modal{border-radius:16px;max-height:calc(100vh - 48px);}
+
+  /* ── Filter panel — constrained, not full-width ── */
+  .fp{width:320px;}
+
+  /* ── Photos page ── */
+  .photos-page{padding:28px 32px;}
+  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+
+  /* ── DB / Users pages ── */
+  .db-page,.users-page{padding:24px 32px;}
+
+  /* ── Projects admin page ── */
+  .projects-page{padding:28px 32px;}
+  .proj-admin-grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+
+  /* ── Project Select Screen — wider card + 2-col project list ── */
+  .proj-select-card{max-width:700px;}
+  .proj-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .proj-card{margin-bottom:0;}
+
+  /* ── Forms — use full column count ── */
+  .fr3{grid-template-columns:1fr 1fr 1fr;}
+
+  /* ── List view — comfortable padding ── */
+  .fw-list{padding:16px 24px;}
+  .lt th,.lt td{padding:12px 16px;}
+
+  /* ── Calendar ── */
+  .fw-cal{padding:16px 24px;}
+
+  /* ── Touch targets — desktop can be more compact ── */
+  .btn{min-height:36px;}
+  .fi{min-height:38px;font-size:14px;}
+  select.fi{min-height:38px;font-size:14px;}
+
+  /* ── Punch modal — wider on desktop ── */
+  .punch-modal{max-width:860px;}
+}
+
 /* ── PROFILE MODAL ── */
 .prof-av-preview{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;margin:0 auto 6px;transition:background .15s;}
 .prof-section{background:#f8f9fc;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
@@ -703,7 +823,7 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
    CONSTANTS
 ════════════════════════════════ */
 /* Rev 01 — revision identifier shown in UI & sidebar */
-const APP_REVISION = "Rev 02";
+const APP_REVISION = "Rev 03";
 const COL_COLORS={"due-today":"#ef4444","cat-a":"#f97316","cat-b":"#3b82f6","cat-c":"#8b5cf6","offshore":"#0891b2","verify-yard":"#d97706","verify-client":"#db2777","approved":"#16a34a"};
 const COLUMNS=[{id:"due-today",label:"Due Today"},{id:"cat-a",label:"Category A"},{id:"cat-b",label:"Category B"},{id:"cat-c",label:"Documentation"},{id:"offshore",label:"Offshore"},{id:"verify-yard",label:"Verify — Yard"},{id:"verify-client",label:"Verify — Client"},{id:"approved",label:"Approved"}];
 const PRI={high:{label:"High",color:"#ef4444",bg:"#fef2f2",icon:"▲"},medium:{label:"Medium",color:"#f59e0b",bg:"#fffbeb",icon:"◆"},low:{label:"Low",color:"#6b7280",bg:"#f9fafb",icon:"▼"}};
@@ -833,6 +953,17 @@ const compressImage = (file) => new Promise((resolve) => {
 /* localStorage helpers (still used for Firebase config + nextId) */
 const lsGet=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+/* ── useIsMobile — reactive breakpoint hook (replaces static window.innerWidth checks) ── */
+function useIsMobile(breakpoint=768){
+  const [mob,setMob]=useState(()=>typeof window!=="undefined"&&window.innerWidth<breakpoint);
+  useEffect(()=>{
+    const h=()=>setMob(window.innerWidth<breakpoint);
+    window.addEventListener("resize",h,{passive:true});
+    return()=>window.removeEventListener("resize",h);
+  },[breakpoint]);
+  return mob;
+}
 
 /* SHA-256 password hashing via browser SubtleCrypto */
 const hashPassword = async pw => {
@@ -1187,10 +1318,13 @@ function HomeScreen({tasks,photos,currentUser,onNavigate,onImportXlsx,onExportPh
   const total=tasks.length;
   const openCnt=tasks.filter(t=>(t.attrs?.punchStatus||"Open")!=="Closed").length;
   const closedCnt=tasks.filter(t=>t.attrs?.punchStatus==="Closed").length;
+  const myItems=tasks.filter(t=>t.assignee===currentUser?.id).length;
+  const overdueCnt=tasks.filter(t=>isOverdue(t.dueDate)&&(t.attrs?.punchStatus||"Open")!=="Closed").length;
   const handleSearch=e=>{if(e.key==="Enter"&&srch.trim())onNavigate("all",{search:srch.trim()});};
   return(
     <div className="home-screen">
       <div className="home-hero">
+        <div className="home-hero-inner">
         <div className="home-project-label">FieldWork — {APP_REVISION}</div>
         <div className="home-title">Good to see you 👋</div>
         <div className="home-date">{new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
@@ -1198,6 +1332,7 @@ function HomeScreen({tasks,photos,currentUser,onNavigate,onImportXlsx,onExportPh
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input value={srch} onChange={e=>setSrch(e.target.value)} onKeyDown={handleSearch} placeholder="Search by PL Item no, description… (Enter)"/>
           {srch&&<button type="button" style={{background:"none",border:"none",color:"rgba(255,255,255,.4)",cursor:"pointer",fontSize:16,padding:"0 2px",lineHeight:1}} onClick={()=>setSrch("")}>✕</button>}
+        </div>
         </div>
       </div>
       <div className="home-stats">
@@ -1212,6 +1347,14 @@ function HomeScreen({tasks,photos,currentUser,onNavigate,onImportXlsx,onExportPh
         <div className="home-stat" onClick={()=>onNavigate("all",{punchStatus:"Closed"})}>
           <div className="home-stat-num" style={{color:"#16a34a"}}>{closedCnt}</div>
           <div className="home-stat-lbl">Closed</div>
+        </div>
+        <div className="home-stat" onClick={()=>onNavigate("my-tasks")}>
+          <div className="home-stat-num" style={{color:"#7c3aed"}}>{myItems}</div>
+          <div className="home-stat-lbl">My Items</div>
+        </div>
+        <div className="home-stat" onClick={()=>onNavigate("all",{overdue:true})}>
+          <div className="home-stat-num" style={{color:overdueCnt>0?"#ef4444":"#9ca3af"}}>{overdueCnt}</div>
+          <div className="home-stat-lbl">Overdue</div>
         </div>
       </div>
       <div className="home-grid">
@@ -1299,22 +1442,24 @@ function RoomListScreen({tasks,onRoomSelect}){
           <div style={{fontSize:13}}>{search?"Try a different search":"Import an Excel file to populate rooms."}</div>
         </div>
       )}
-      {rooms.map(r=>(
-        <div key={r.code} className="room-item" onClick={()=>onRoomSelect(r.code)}>
-          <div className="room-code">{r.code}</div>
-          <div className="room-info">
-            <div className="room-name">Room {r.code}</div>
-            <div className="room-total">{r.total} punch item{r.total!==1?"s":""}</div>
+      <div className="room-items-grid">
+        {rooms.map(r=>(
+          <div key={r.code} className="room-item" onClick={()=>onRoomSelect(r.code)}>
+            <div className="room-code">{r.code}</div>
+            <div className="room-info">
+              <div className="room-name">Room {r.code}</div>
+              <div className="room-total">{r.total} punch item{r.total!==1?"s":""}</div>
+            </div>
+            {r.total===0
+              ? <div className="room-badge-empty">— empty</div>
+              : r.open===0
+                ? <div className="room-badge-done">✅ All closed</div>
+                : <div className="room-badge-open">🔴 {r.open} open</div>
+            }
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
-          {r.total===0
-            ? <div className="room-badge-empty">— empty</div>
-            : r.open===0
-              ? <div className="room-badge-done">✅ All closed</div>
-              : <div className="room-badge-open">🔴 {r.open} open</div>
-          }
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4c9d4" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -2125,6 +2270,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
   const [editTitle,setEditTitle]=useState(false);const [titleVal,setTitleVal]=useState(task.title);
   const [newCheck,setNewCheck]=useState(""); const [newMsg,setNewMsg]=useState(""); const [actOrder,setActOrder]=useState("oldest");
   const [mobileTab,setMobileTab]=useState("details");
+  const isMob=useIsMobile(); /* Patch A — replaces static window.innerWidth checks */
   const canEdit=can(currentUser,"edit_task",t);
   const save=useCallback(updates=>{const m={...t,...updates};setT(m);onUpdate(m);},[t,onUpdate]);
   const saveAttr=(k,v)=>save({attrs:{...t.attrs,[k]:v}});
@@ -2234,7 +2380,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
         </div>
         <div className="td-body">
           {/* LEFT — hidden on mobile when showing attrs tab */}
-          <div style={typeof window!=="undefined"&&window.innerWidth<768&&mobileTab==="attrs"?{display:"none"}:{}}>
+          <div style={isMob&&mobileTab==="attrs"?{display:"none"}:{}}>
           <div className="td-left">
             <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
               {editTitle&&canEdit?(
@@ -2317,7 +2463,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
 
           </div>{/* end left panel conditional */}
           {/* RIGHT — ATTRIBUTES (also shown as mobile tab) */}
-          <div className={`td-right${typeof window!=="undefined"&&window.innerWidth<768?" m-only":""}`} style={typeof window!=="undefined"&&window.innerWidth<768&&mobileTab!=="attrs"?{display:"none"}:{}}>
+          <div className={`td-right${isMob?" m-only":""}`} style={isMob&&mobileTab!=="attrs"?{display:"none"}:{}}>
             <div className="td-attr-hd"><span className="td-attr-title">Task Attributes</span><button style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:16}} onClick={onClose}>×</button></div>
             <div className="td-attr-body">
               {ATTRS.map(row=>{
@@ -2371,8 +2517,7 @@ function TaskDetailPanel({task,onClose,onUpdate,onDelete,tasks,db,users,currentU
 ════════════════════════════════ */
 function BoardView({columns,tasksByColumn,draggingId,dragOverCol,mobileCol,onDragStart,onDragEnd,onDragOver,onDragLeave,onDrop,onTaskClick,onAddTask,onMoveTask,currentUser,users}){
   const [moveTask,setMoveTask]=useState(null);
-  const [isMob,setIsMob]=useState(window.innerWidth<768);
-  useEffect(()=>{const h=()=>setIsMob(window.innerWidth<768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  const isMob=useIsMobile(); /* Patch A — unified hook */
   return(
     <>
       <section className="fw-board">
